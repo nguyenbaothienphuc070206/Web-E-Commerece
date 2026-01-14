@@ -26,19 +26,29 @@ export default function LoginPage() {
         return
       }
     }
-    alert("Lỗi")
+    alert("Authentication failed. Please try again.")
   }
   return (
     <main className="min-h-screen bg-background pt-24">
       <div className="max-w-md mx-auto px-4 py-8">
         <div className="flex gap-2 mb-6">
-          <button onClick={() => setMode("login")} className={`px-3 py-2 rounded ${mode === "login" ? "bg-primary text-primary-foreground" : "border"}`}>Đăng nhập</button>
-          <button onClick={() => setMode("register")} className={`px-3 py-2 rounded ${mode === "register" ? "bg-primary text-primary-foreground" : "border"}`}>Đăng ký</button>
+          <button
+            onClick={() => setMode("login")}
+            className={`px-3 py-2 rounded ${mode === "login" ? "bg-primary text-primary-foreground" : "border"}`}
+          >
+            Sign in
+          </button>
+          <button
+            onClick={() => setMode("register")}
+            className={`px-3 py-2 rounded ${mode === "register" ? "bg-primary text-primary-foreground" : "border"}`}
+          >
+            Create account
+          </button>
         </div>
         <form className="space-y-4" onSubmit={submit}>
           {mode === "register" && (
             <div>
-              <label className="block text-sm mb-1">Tên</label>
+              <label className="block text-sm mb-1">Name</label>
               <input value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
             </div>
           )}
@@ -47,10 +57,12 @@ export default function LoginPage() {
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
           </div>
           <div>
-            <label className="block text-sm mb-1">Mật khẩu</label>
+            <label className="block text-sm mb-1">Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-md border bg-background px-3 py-2" />
           </div>
-          <button type="submit" className="w-full h-11 rounded-md bg-primary text-primary-foreground">{mode === "login" ? "Đăng nhập" : "Đăng ký"}</button>
+          <button type="submit" className="w-full h-11 rounded-md bg-primary text-primary-foreground">
+            {mode === "login" ? "Sign in" : "Create account"}
+          </button>
         </form>
       </div>
     </main>

@@ -61,7 +61,7 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-semibold mb-1">Address</h4>
                   <p className="text-sm text-muted-foreground">
-                    📍 123 Nguyễn Văn Cơ, Q1, TP HCM
+                    123 Nguyen Van Co, District 1, Ho Chi Minh City
                   </p>
                 </div>
               </div>
@@ -73,7 +73,7 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-semibold mb-1">Phone</h4>
                   <p className="text-sm text-muted-foreground">
-                    📞 1900 1234
+                    1900 1234
                   </p>
                 </div>
               </div>
@@ -85,7 +85,7 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-semibold mb-1">Email</h4>
                   <p className="text-sm text-muted-foreground">
-                    ✉️ info@techmart.com
+                    info@techmart.com
                   </p>
                 </div>
               </div>

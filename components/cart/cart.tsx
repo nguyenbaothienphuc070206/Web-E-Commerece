@@ -10,14 +10,14 @@ export default function Cart() {
 
   if (!items.length) {
     return (
-  <div className="p-10 rounded-2xl border bg-linear-to-br from-background to-accent/10 text-center">
+      <div className="p-10 rounded-2xl border bg-linear-to-br from-background to-accent/10 text-center">
         <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center">
           <ShoppingBag className="w-8 h-8 text-accent-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Giỏ hàng của bạn trống</h3>
-        <p className="text-muted-foreground mb-6">Hãy khám phá sản phẩm hấp dẫn và thêm vào giỏ hàng nhé.</p>
+        <h3 className="text-xl font-semibold mb-2">Your cart is empty</h3>
+        <p className="text-muted-foreground mb-6">Browse products and add them to your cart.</p>
         <a href="/" className="inline-block">
-          <Button>Tiếp tục mua sắm</Button>
+          <Button>Continue shopping</Button>
         </a>
       </div>
     )
@@ -27,13 +27,13 @@ export default function Cart() {
     <div className="space-y-4">
       {/* Header */}
       <div className="rounded-xl border bg-card/60 backdrop-blur px-4 py-3 flex items-center justify-between">
-        <div className="font-semibold">Giỏ hàng ({items.reduce((s, i) => s + i.quantity, 0)} sản phẩm)</div>
+        <div className="font-semibold">Cart ({items.reduce((s, i) => s + i.quantity, 0)} items)</div>
         <button
           onClick={() => clearCart()}
           className="text-sm text-destructive hover:underline"
           aria-label="Clear cart"
         >
-          Xóa tất cả
+          Clear all
         </button>
       </div>
 
@@ -51,7 +51,7 @@ export default function Cart() {
             />
             <div className="min-w-0">
               <div className="font-medium truncate pr-4">{it.name}</div>
-              <div className="text-sm text-muted-foreground">Đơn giá: {(it.price / 1000000).toFixed(1)}M₫</div>
+              <div className="text-sm text-muted-foreground">Unit price: {(it.price / 1000000).toFixed(1)}M₫</div>
               <div className="mt-3 flex items-center gap-2">
                 <button
                   onClick={() => updateQuantity(it.productId, Math.max(1, it.quantity - 1))}
@@ -72,12 +72,12 @@ export default function Cart() {
                   onClick={() => removeFromCart(it.productId)}
                   className="ml-2 inline-flex items-center gap-1 text-sm text-destructive hover:underline"
                 >
-                  <Trash2 className="w-4 h-4" /> Xóa
+                  <Trash2 className="w-4 h-4" /> Remove
                 </button>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-muted-foreground">Thành tiền</div>
+              <div className="text-sm text-muted-foreground">Line total</div>
               <div className="text-lg font-semibold">{((it.price * it.quantity) / 1000000).toFixed(1)}M₫</div>
             </div>
           </div>
@@ -87,14 +87,14 @@ export default function Cart() {
       {/* Footer actions */}
       <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
         <a href="/" className="inline-block">
-          <Button variant="outline">← Tiếp tục mua sắm</Button>
+          <Button variant="outline">← Continue shopping</Button>
         </a>
         <div className="flex items-center gap-3">
           <div className="text-sm text-muted-foreground">
-            Tạm tính: <span className="font-semibold text-foreground">{(getTotal() / 1000000).toFixed(1)}M₫</span>
+            Subtotal: <span className="font-semibold text-foreground">{(getTotal() / 1000000).toFixed(1)}M₫</span>
           </div>
           <a href="/checkout">
-            <Button>Thanh toán</Button>
+            <Button>Checkout</Button>
           </a>
         </div>
       </div>

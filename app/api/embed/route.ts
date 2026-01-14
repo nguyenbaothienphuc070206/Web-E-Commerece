@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'Thiếu OPENAI_API_KEY. Endpoint /api/embed đang bị tắt.' },
+        { error: 'Missing OPENAI_API_KEY. The /api/embed endpoint is disabled.' },
         { status: 503 }
       );
     }
@@ -16,20 +16,20 @@ export async function POST(req: Request) {
     const { text } = await req.json();
 
     if (!text) {
-      return NextResponse.json({ error: 'Thiếu text rồi ông ơi' }, { status: 400 });
+      return NextResponse.json({ error: 'Text is required.' }, { status: 400 });
     }
 
-    // Gọi OpenAI để biến chữ thành số (Vector 1536 chiều)
+    // Generate an embedding vector from the input text.
     const response = await openai.embeddings.create({
-      model: 'text-embedding-3-small', // Model ngon bổ rẻ nhất hiện nay
-      input: text.replace(/\n/g, ' '), // Xóa xuống dòng thừa
+      model: 'text-embedding-3-small',
+      input: text.replace(/\n/g, ' '),
     });
 
     const embedding = response.data[0].embedding;
 
     return NextResponse.json({ embedding });
   } catch (error: any) {
-    console.error('Lỗi OpenAI:', error);
+    console.error('OpenAI error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -33,7 +33,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const raw = localStorage.getItem(CART_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
-        console.log("Cart loaded from localStorage:", parsed)
         setItems(parsed)
       }
     } catch (e) {
@@ -44,7 +43,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (mounted) {
       try {
-        console.log("Saving cart to localStorage:", items)
         localStorage.setItem(CART_KEY, JSON.stringify(items))
       } catch (e) {
         console.warn("Failed to save cart to localStorage", e)
@@ -53,17 +51,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items, mounted])
 
   const addToCart = (item: CartItem) => {
-    console.log("Adding to cart:", item)
     setItems((prev) => {
       const found = prev.find((p) => p.productId === item.productId)
       if (found) {
-        const updated = prev.map((p) => (p.productId === item.productId ? { ...p, quantity: p.quantity + item.quantity } : p))
-        console.log("Updated cart (item exists):", updated)
-        return updated
+        return prev.map((p) => (p.productId === item.productId ? { ...p, quantity: p.quantity + item.quantity } : p))
       }
-      const updated = [...prev, item]
-      console.log("Updated cart (new item):", updated)
-      return updated
+      return [...prev, item]
     })
   }
 

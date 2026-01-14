@@ -33,7 +33,7 @@ export default function SearchPage() {
     activeSearchControllerRef.current = controller;
 
     setLoading(true);
-    setStatus('⏳ Đang nhờ Gemini đọc hiểu...');
+    setStatus('Searching with Gemini...');
     if (opts?.clear !== false) setResults([]);
 
     try {
@@ -47,16 +47,16 @@ export default function SearchPage() {
       const data = await res.json();
 
       if (data.error) {
-        setStatus(`❌ Lỗi: ${data.error}`);
+        setStatus(`Error: ${data.error}`);
       } else if (data.products?.length > 0) {
         setResults(data.products);
-        setStatus(`✅ Tìm thấy ${data.products.length} sản phẩm phù hợp!`);
+        setStatus(`Found ${data.products.length} matching products.`);
       } else {
-        setStatus('🤔 Gemini không tìm thấy sản phẩm nào giống ý bạn.');
+        setStatus('No matching products found.');
       }
     } catch (err) {
       if ((err as any)?.name === 'AbortError') return;
-      setStatus('❌ Lỗi kết nối server.');
+      setStatus('Server connection error.');
     } finally {
       setLoading(false);
     }
@@ -126,8 +126,6 @@ export default function SearchPage() {
           />
 
           <div className="rounded-xl border bg-card p-5 sm:p-6">
-
-            {/* Ô NHẬP LIỆU */}
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
@@ -141,15 +139,11 @@ export default function SearchPage() {
                 {loading ? 'Searching...' : 'Search'}
               </Button>
             </div>
-
-            {/* TRẠNG THÁI */}
             {status && (
               <p className="mt-4 text-sm font-medium text-muted-foreground" aria-live="polite">
                 {status}
               </p>
             )}
-
-            {/* KẾT QUẢ */}
             <div className="mt-6 space-y-3">
               {loading && results.length === 0 && (
                 <>

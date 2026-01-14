@@ -72,7 +72,7 @@ export async function createProductAction(prevState: ActionResult | null, formDa
     const price = Number(formData.get("price") || 0)
     const autoDescribe = String(formData.get("autoDescribe") || "") === "on"
 
-    if (!name) return { success: false, error: "Thiếu tên sản phẩm" }
+    if (!name) return { success: false, error: "Product name is required." }
 
     const genAI = getGemini()
 
@@ -84,7 +84,7 @@ export async function createProductAction(prevState: ActionResult | null, formDa
         const visionResult = await visionModel.generateContent([
           {
             text:
-              "Hãy mô tả sản phẩm công nghệ trong ảnh (tiếng Việt), 1-2 câu ngắn + 3 gạch đầu dòng nêu điểm nổi bật. Không bịa thông số quá chi tiết nếu không chắc.",
+              "Describe the tech product in the image in English: 1–2 short sentences plus 3 bullet points highlighting key features. Do not invent precise specs if you are not sure.",
           },
           imagePart,
         ])
@@ -93,7 +93,7 @@ export async function createProductAction(prevState: ActionResult | null, formDa
     }
 
     if (!description) {
-      description = "Sản phẩm công nghệ chính hãng, chất lượng cao."
+      description = "Genuine tech product with reliable quality."
     }
 
     const embedModel = genAI.getGenerativeModel({ model: "text-embedding-004" })
@@ -104,7 +104,7 @@ export async function createProductAction(prevState: ActionResult | null, formDa
     const embed = await embedModel.embedContent(embedText)
     const embedding = embed.embedding?.values
     if (!Array.isArray(embedding) || embedding.length === 0) {
-      return { success: false, error: "Không tạo được embedding" }
+      return { success: false, error: "Failed to generate an embedding." }
     }
 
     const row = {
@@ -121,7 +121,7 @@ export async function createProductAction(prevState: ActionResult | null, formDa
     const { error } = await tryInsertProductRow(row)
     if (error) return { success: false, error: error.message }
 
-    return { success: true, message: "✅ Đã nạp sản phẩm + embedding vào Supabase." }
+    return { success: true, message: "Product and embedding saved to Supabase." }
   } catch (e: any) {
     return { success: false, error: e?.message || "Create product failed" }
   }
@@ -155,7 +155,7 @@ export async function seedProductsAction(): Promise<ActionResult> {
         const embed = await embedModel.embedContent(embedText)
         const embedding = embed.embedding?.values
         if (!Array.isArray(embedding) || embedding.length === 0) {
-          return { success: false, error: `Không tạo được embedding cho: ${p.name}` }
+          return { success: false, error: `Failed to generate an embedding for: ${p.name}` }
         }
 
         rows.push({
@@ -182,7 +182,7 @@ export async function seedProductsAction(): Promise<ActionResult> {
       inserted += rows.length
     }
 
-    return { success: true, message: `✅ Seed xong ${inserted} sản phẩm.` , inserted }
+    return { success: true, message: `Seeded ${inserted} products.`, inserted }
   } catch (e: any) {
     return { success: false, error: e?.message || "Seed failed" }
   }

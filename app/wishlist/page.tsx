@@ -14,18 +14,18 @@ export default function WishlistPage() {
     <main className="min-h-screen bg-background pt-24">
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Sản phẩm yêu thích</h1>
-          <div className="text-sm text-muted-foreground">{items.length} sản phẩm</div>
+          <h1 className="text-2xl font-bold">Wishlist</h1>
+          <div className="text-sm text-muted-foreground">{items.length} items</div>
         </div>
         {items.length === 0 ? (
           <div className="rounded-xl border bg-card p-12 text-center">
             <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center">
               <Heart className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Chưa có sản phẩm yêu thích</h3>
-            <p className="text-muted-foreground mb-6">Hãy khám phá và thêm sản phẩm vào danh sách yêu thích của bạn.</p>
+            <h3 className="text-xl font-semibold mb-2">Your wishlist is empty</h3>
+            <p className="text-muted-foreground mb-6">Browse products and save your favorites.</p>
             <a href="/">
-              <Button>Khám phá ngay</Button>
+              <Button>Browse products</Button>
             </a>
           </div>
         ) : (
@@ -35,7 +35,7 @@ export default function WishlistPage() {
                 <button
                   onClick={() => toggle(p)}
                   className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur rounded-full p-2 hover:bg-destructive/10 transition"
-                  title="Xóa khỏi yêu thích"
+                  title="Remove from wishlist"
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </button>
@@ -58,7 +58,7 @@ export default function WishlistPage() {
                   }}
                 >
                   <ShoppingCart className="w-4 h-4 mr-2" />
-                  Thêm vào giỏ
+                  Add to cart
                 </Button>
               </div>
             ))}

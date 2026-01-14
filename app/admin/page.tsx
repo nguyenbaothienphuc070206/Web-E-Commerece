@@ -16,7 +16,7 @@ export default function AdminPage() {
   if (!ok) return (
     <main className="min-h-screen bg-background pt-24">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <a href="/admin/login" className="underline">Đăng nhập Admin</a>
+        <a href="/admin/login" className="underline">Admin sign in</a>
       </div>
     </main>
   )

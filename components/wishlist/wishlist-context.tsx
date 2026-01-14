@@ -23,7 +23,6 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       const s = localStorage.getItem(KEY)
       if (s) {
         const parsed = JSON.parse(s)
-        console.log("Wishlist loaded from localStorage:", parsed)
         setItems(parsed)
       }
     } catch (e) {
@@ -34,7 +33,6 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (mounted) {
       try {
-        console.log("Saving wishlist to localStorage:", items)
         localStorage.setItem(KEY, JSON.stringify(items))
       } catch (e) {
         console.warn("Failed to save wishlist", e)
@@ -45,12 +43,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const has = (id: number) => items.some((i) => i.id === id)
   
   const toggle = (item: WishlistItem) => {
-    console.log("Toggling wishlist item:", item)
     setItems((prev) => {
       const exists = prev.some((i) => i.id === item.id)
-      const updated = exists ? prev.filter((i) => i.id !== item.id) : [...prev, item]
-      console.log("Updated wishlist:", updated)
-      return updated
+      return exists ? prev.filter((i) => i.id !== item.id) : [...prev, item]
     })
   }
 

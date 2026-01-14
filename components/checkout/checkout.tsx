@@ -17,6 +17,17 @@ export default function Checkout() {
   const [appliedCode, setAppliedCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [messageKind, setMessageKind] = useState<"success" | "error" | null>(null)
+
+  const showError = (text: string) => {
+    setMessage(text)
+    setMessageKind("error")
+  }
+
+  const showSuccess = (text: string) => {
+    setMessage(text)
+    setMessageKind("success")
+  }
 
   const subtotal = getTotal()
   const discount = useMemo(() => {
@@ -40,15 +51,18 @@ export default function Checkout() {
       setAppliedCode(code)
     } else {
       setAppliedCode(null)
-      setMessage("Mã giảm giá không hợp lệ")
-      setTimeout(() => setMessage(null), 3000)
+      showError("Invalid promo code.")
+      setTimeout(() => {
+        setMessage(null)
+        setMessageKind(null)
+      }, 3000)
     }
   }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!items.length) return setMessage("Giỏ hàng trống")
-    if (!name || !phone || !address) return setMessage("Vui lòng điền đầy đủ thông tin")
+    if (!items.length) return showError("Your cart is empty.")
+    if (!name || !phone || !address) return showError("Please fill in all required fields.")
     setLoading(true)
 
     const payload = {
@@ -69,18 +83,22 @@ export default function Checkout() {
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Đặt hàng thất bại")
+      if (!res.ok) throw new Error(data?.error || "Failed to place the order.")
 
       await fetch("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: email || phone, type: "order_created", message: `Đơn hàng #${data.data.id} đã được tạo` }),
+        body: JSON.stringify({
+          to: email || phone,
+          type: "order_created",
+          message: `Order #${data.data.id} has been created.`,
+        }),
       })
 
       clearCart()
-      setMessage(`Đặt hàng thành công! Mã đơn hàng: #${data.data.id}`)
+      showSuccess(`Order placed successfully. Order ID: #${data.data.id}`)
     } catch (err: any) {
-      setMessage(err?.message || "Đặt hàng thất bại")
+      showError(err?.message || "Failed to place the order.")
     } finally {
       setLoading(false)
     }
@@ -92,10 +110,10 @@ export default function Checkout() {
         <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center">
           <Package className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Giỏ hàng trống</h3>
-        <p className="text-muted-foreground mb-6">Hãy thêm sản phẩm vào giỏ hàng trước khi thanh toán.</p>
+        <h3 className="text-xl font-semibold mb-2">Your cart is empty</h3>
+        <p className="text-muted-foreground mb-6">Add items to your cart before checking out.</p>
         <a href="/">
-          <Button>Mua sắm ngay</Button>
+          <Button>Start shopping</Button>
         </a>
       </div>
     )
@@ -106,16 +124,16 @@ export default function Checkout() {
       {/* Left: Customer Info */}
       <div className="lg:col-span-2 space-y-6">
         <div className="rounded-xl border bg-card p-6">
-          <h3 className="text-lg font-semibold mb-4">Thông tin giao hàng</h3>
+          <h3 className="text-lg font-semibold mb-4">Shipping information</h3>
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Họ và tên *</label>
+              <label className="block text-sm font-medium mb-1">Full name *</label>
               <input 
                 required
                 className="w-full rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
-                placeholder="Nguyễn Văn A"
+                placeholder="John Doe"
               />
             </div>
 
@@ -131,7 +149,7 @@ export default function Checkout() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Số điện thoại *</label>
+                <label className="block text-sm font-medium mb-1">Phone *</label>
                 <input 
                   required
                   className="w-full rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" 
@@ -143,33 +161,33 @@ export default function Checkout() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Địa chỉ giao hàng *</label>
+              <label className="block text-sm font-medium mb-1">Shipping address *</label>
               <textarea 
                 required
                 rows={3}
                 className="w-full rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring" 
                 value={address} 
                 onChange={(e) => setAddress(e.target.value)} 
-                placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                placeholder="Street address, city, state/province, ZIP/postal code"
               />
             </div>
           </form>
         </div>
 
         <div className="rounded-xl border bg-card p-6">
-          <h3 className="text-lg font-semibold mb-4">Phương thức thanh toán</h3>
+          <h3 className="text-lg font-semibold mb-4">Payment method</h3>
           <PaymentOptions value={payment} onChange={setPayment} />
         </div>
 
         <div className="rounded-xl border bg-card p-6">
-          <h3 className="text-lg font-semibold mb-4">Sản phẩm trong đơn hàng</h3>
+          <h3 className="text-lg font-semibold mb-4">Items in your order</h3>
           <div className="space-y-3">
             {items.map((item) => (
               <div key={item.productId} className="flex gap-3 items-center">
                 <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-16 h-16 object-contain rounded bg-muted" />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{item.name}</div>
-                  <div className="text-sm text-muted-foreground">Số lượng: {item.quantity}</div>
+                  <div className="text-sm text-muted-foreground">Qty: {item.quantity}</div>
                 </div>
                 <div className="font-semibold">{((item.price * item.quantity) / 1000000).toFixed(1)}M₫</div>
               </div>
@@ -181,26 +199,26 @@ export default function Checkout() {
       {/* Right: Order Summary */}
       <div className="lg:col-span-1">
         <div className="rounded-xl border bg-card p-6 sticky top-24 space-y-6">
-          <h3 className="text-lg font-semibold">Tóm tắt đơn hàng</h3>
+          <h3 className="text-lg font-semibold">Order summary</h3>
           
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>Tạm tính</span>
+              <span>Subtotal</span>
               <span>{(subtotal / 1000000).toFixed(2)}M₫</span>
             </div>
             <div className="flex justify-between">
-              <span>Giảm giá {appliedCode ? `(${appliedCode})` : ""}</span>
+              <span>Discount {appliedCode ? `(${appliedCode})` : ""}</span>
               <span className={discount > 0 ? "text-destructive" : "text-muted-foreground"}>
                 -{(discount / 1000000).toFixed(2)}M₫
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Phí vận chuyển</span>
-              <span>{shipping === 0 ? "Miễn phí" : `${(shipping / 1000000).toFixed(3)}M₫`}</span>
+              <span>Shipping</span>
+              <span>{shipping === 0 ? "Free" : `${(shipping / 1000000).toFixed(3)}M₫`}</span>
             </div>
             <div className="h-px bg-border my-2" />
             <div className="flex justify-between font-semibold text-base">
-              <span>Tổng cộng</span>
+              <span>Total</span>
               <span className="text-primary">{(total / 1000000).toFixed(2)}M₫</span>
             </div>
           </div>
@@ -208,7 +226,7 @@ export default function Checkout() {
           <div>
             <label className="block text-sm font-medium mb-2 flex items-center gap-2">
               <Tag className="w-4 h-4" />
-              Mã giảm giá
+              Promo code
             </label>
             <div className="flex gap-2">
               <input
@@ -218,11 +236,11 @@ export default function Checkout() {
                 className="flex-1 rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
               />
               <Button type="button" onClick={applyPromoCode} variant="outline">
-                Áp dụng
+                Apply
               </Button>
             </div>
             {appliedCode && (
-              <div className="text-xs text-green-600 mt-1">✓ Mã {appliedCode} đã được áp dụng</div>
+              <div className="text-xs text-green-600 mt-1">✓ Code {appliedCode} applied</div>
             )}
           </div>
 
@@ -231,17 +249,19 @@ export default function Checkout() {
             onClick={submit}
             disabled={loading}
           >
-            {loading ? "Đang xử lý..." : "Đặt hàng"}
+            {loading ? "Processing..." : "Place order"}
           </Button>
 
           {message && (
-            <div className={`text-sm p-3 rounded-md ${message.includes("thành công") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+            <div
+              className={`text-sm p-3 rounded-md ${messageKind === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+            >
               {message}
             </div>
           )}
 
           <div className="text-xs text-muted-foreground">
-            💡 Mẹo: Miễn phí vận chuyển cho đơn hàng từ 10,000,000₫
+            Tip: Free shipping on orders over 10,000,000₫
           </div>
         </div>
       </div>

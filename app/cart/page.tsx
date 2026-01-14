@@ -37,13 +37,13 @@ export default function CartPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Hero header */}
-  <div className="bg-linear-to-r from-primary/10 via-accent/10 to-transparent border-b">
+      <div className="bg-linear-to-r from-primary/10 via-accent/10 to-transparent border-b">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-sm text-muted-foreground mb-2">Trang chủ / Giỏ hàng</div>
-          <h1 className="text-3xl font-bold">Giỏ hàng của bạn</h1>
+          <div className="text-sm text-muted-foreground mb-2">Home / Cart</div>
+          <h1 className="text-3xl font-bold">Your cart</h1>
           {!!items.length && (
             <div className="mt-1 text-sm text-muted-foreground">
-              {items.reduce((s, i) => s + i.quantity, 0)} sản phẩm trong giỏ
+              {items.reduce((s, i) => s + i.quantity, 0)} items in your cart
             </div>
           )}
         </div>
@@ -57,48 +57,48 @@ export default function CartPage() {
         {/* Summary card */}
         <aside className="lg:col-span-1">
           <div className="rounded-2xl border bg-card p-5 sticky top-24">
-            <h2 className="text-lg font-semibold mb-3">Tóm tắt đơn hàng</h2>
+            <h2 className="text-lg font-semibold mb-3">Order summary</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span>Tạm tính</span><span>{(subtotal / 1000000).toFixed(2)}M₫</span></div>
+              <div className="flex justify-between"><span>Subtotal</span><span>{(subtotal / 1000000).toFixed(2)}M₫</span></div>
               <div className="flex justify-between">
-                <span>Giảm giá {applied ? `(mã ${applied})` : ""}</span>
+                <span>Discount {applied ? `(${applied})` : ""}</span>
                 <span className={applied ? "text-destructive" : "text-muted-foreground"}>-
                   {(discount / 1000000).toFixed(2)}M₫
                 </span>
               </div>
-              <div className="flex justify-between"><span>Phí vận chuyển</span><span>{shipping ? `${(shipping / 1000000).toFixed(3)}M₫` : "Miễn phí"}</span></div>
+              <div className="flex justify-between"><span>Shipping</span><span>{shipping ? `${(shipping / 1000000).toFixed(3)}M₫` : "Free"}</span></div>
               <div className="h-px my-2 bg-border" />
-              <div className="flex justify-between font-semibold text-base"><span>Tổng cộng</span><span>{(total / 1000000).toFixed(2)}M₫</span></div>
+              <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{(total / 1000000).toFixed(2)}M₫</span></div>
             </div>
 
             {/* Promo code */}
             <div className="mt-5">
-              <label className="text-sm font-medium">Mã khuyến mãi</label>
+              <label className="text-sm font-medium">Promo code</label>
               <div className="mt-1 flex gap-2">
                 <input
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="Nhập mã (VD: SALE10)"
+                  placeholder="Enter a code (e.g., SALE10)"
                   className="flex-1 rounded-md border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-ring"
                 />
-                <Button type="button" onClick={applyCode} variant="outline">Áp dụng</Button>
+                <Button type="button" onClick={applyCode} variant="outline">Apply</Button>
               </div>
               {applied === null && code && (
-                <div className="text-xs text-muted-foreground mt-1">Mã không hợp lệ hoặc không áp dụng.</div>
+                <div className="text-xs text-muted-foreground mt-1">Invalid or unsupported code.</div>
               )}
             </div>
 
             <a href="/checkout" className="block mt-5">
-              <Button className="w-full h-11">Tiến hành thanh toán</Button>
+              <Button className="w-full h-11">Proceed to checkout</Button>
             </a>
-            <div className="text-xs text-muted-foreground mt-2">Miễn phí vận chuyển cho đơn từ 10,000,000₫</div>
+            <div className="text-xs text-muted-foreground mt-2">Free shipping on orders over 10,000,000₫</div>
           </div>
         </aside>
       </div>
 
       {/* Recommended products */}
       <div className="max-w-7xl mx-auto px-4 pb-12">
-        <h3 className="text-lg font-semibold mb-4">Gợi ý cho bạn</h3>
+        <h3 className="text-lg font-semibold mb-4">Recommended for you</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {products.slice(0, 4).map((p) => (
             <a key={p.id} href="#" className="group rounded-xl border p-3 hover:shadow transition bg-card">

@@ -15,27 +15,39 @@ function normalizeText(input: string) {
   return input.replace(/\s+/g, " ").trim();
 }
 
+function normalizeForSearch(input: string) {
+  return normalizeText(input)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0111/g, "d");
+}
+
 function escapeForIlikeTerm(term: string) {
   return term.replace(/[%_,]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function expandQueryTerms(query: string) {
-  const q = normalizeText(query).toLowerCase();
+  const qOriginal = normalizeText(query).toLowerCase();
+  const q = normalizeForSearch(query);
   const terms = new Set<string>();
-  if (q) terms.add(q);
+  if (qOriginal) terms.add(qOriginal);
+  if (q && q !== qOriginal) terms.add(q);
   const add = (...xs: string[]) => xs.forEach((x) => x && terms.add(x));
 
-  if (q.includes("tai nghe")) add("headphone", "headphones", "earbuds", "in-ear", "over-ear");
-  if (q.includes("chống ồn") || q.includes("chong on")) add("noise cancelling", "noise canceling", "anc");
-  if (q.includes("loa")) add("speaker", "speakers", "bluetooth speaker");
-  if (q.includes("bàn phím") || q.includes("ban phim")) add("keyboard", "mechanical keyboard");
-  if (q.includes("chuột") || q.includes("chuot")) add("mouse", "wireless mouse");
-  if (q.includes("màn hình") || q.includes("man hinh")) add("monitor", "display", "4k monitor");
-  if (q.includes("laptop")) add("notebook", "ultrabook");
-  if (q.includes("điện thoại") || q.includes("dien thoai")) add("phone", "smartphone");
-  if (q.includes("máy tính bảng") || q.includes("may tinh bang")) add("tablet", "ipad");
-  if (q.includes("pin dự phòng") || q.includes("pin du phong")) add("power bank", "powerbank");
-  if (q.includes("sạc") || q.includes("sac")) add("charger", "charging");
+  if (q.includes("headphone") || q.includes("headphones") || q.includes("earbud") || q.includes("earbuds")) {
+    add("headphone", "headphones", "earbuds", "in-ear", "over-ear");
+  }
+  if (q.includes("noise cancel") || q.includes("anc")) add("noise cancelling", "noise canceling", "anc");
+  if (q.includes("speaker")) add("speaker", "speakers", "bluetooth speaker");
+  if (q.includes("keyboard")) add("keyboard", "mechanical keyboard");
+  if (q.includes("mouse")) add("mouse", "wireless mouse");
+  if (q.includes("monitor") || q.includes("display")) add("monitor", "display", "4k monitor");
+  if (q.includes("laptop") || q.includes("notebook") || q.includes("ultrabook")) add("laptop", "notebook", "ultrabook");
+  if (q.includes("phone") || q.includes("smartphone")) add("phone", "smartphone");
+  if (q.includes("tablet") || q.includes("ipad")) add("tablet", "ipad");
+  if (q.includes("power bank") || q.includes("powerbank")) add("power bank", "powerbank");
+  if (q.includes("charger") || q.includes("charging")) add("charger", "charging");
 
   for (const token of q.split(" ")) {
     const t = token.trim();

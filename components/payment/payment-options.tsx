@@ -11,7 +11,7 @@ export default function PaymentOptions({ value, onChange }: { value: PaymentMeth
         <input type="radio" name="payment" checked={value === "cod"} onChange={() => onChange("cod")} />
         <div>
           <div className="font-medium">Cash on Delivery</div>
-          <div className="text-sm text-muted-foreground">Trả tiền khi nhận hàng.</div>
+          <div className="text-sm text-muted-foreground">Pay when your order arrives.</div>
         </div>
       </label>
 
@@ -19,7 +19,7 @@ export default function PaymentOptions({ value, onChange }: { value: PaymentMeth
         <input type="radio" name="payment" checked={value === "card"} onChange={() => onChange("card")} />
         <div>
           <div className="font-medium">Card</div>
-          <div className="text-sm text-muted-foreground">Thanh toán bằng thẻ.</div>
+          <div className="text-sm text-muted-foreground">Pay with a card.</div>
         </div>
       </label>
 
@@ -27,7 +27,7 @@ export default function PaymentOptions({ value, onChange }: { value: PaymentMeth
         <input type="radio" name="payment" checked={value === "vnpay"} onChange={() => onChange("vnpay")} />
         <div>
           <div className="font-medium">VNPay</div>
-          <div className="text-sm text-muted-foreground">Chuyển hướng tới VNPay.</div>
+          <div className="text-sm text-muted-foreground">Redirects you to VNPay.</div>
         </div>
       </label>
     </div>

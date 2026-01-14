@@ -77,7 +77,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="font-semibold mb-4">Liên hệ</h3>
+            <h3 className="font-semibold mb-4">Contact</h3>
             <ul className="space-y-2 text-gray-400 text-sm">
               <li className="flex items-center gap-2">
                 <span>📞</span>
@@ -89,7 +89,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <span>📍</span>
-                <span>123 Nguyễn Văn Cơ, Q1, TP HCM</span>
+                <span>123 Nguyen Van Co St, District 1, Ho Chi Minh City</span>
               </li>
             </ul>
           </div>

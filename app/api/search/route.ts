@@ -17,30 +17,39 @@ function normalizeText(input: string) {
   return input.replace(/\s+/g, ' ').trim();
 }
 
+function normalizeForMatching(input: string) {
+  return normalizeText(input)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\u0111/g, 'd')
+    .replace(/\u0110/g, 'd');
+}
+
 function escapeForIlikeTerm(term: string) {
   // PostgREST filter string is comma-separated; avoid breaking the OR string.
   return term.replace(/[%_,]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function expandQueryTerms(query: string) {
-  const q = normalizeText(query).toLowerCase();
+  const q = normalizeForMatching(query);
   const terms = new Set<string>();
   if (q) terms.add(q);
 
   const add = (...xs: string[]) => xs.forEach((x) => x && terms.add(x));
 
-  // Minimal VN→EN synonym expansion for common e-commerce intents.
-  if (q.includes('tai nghe')) add('headphone', 'headphones', 'earbuds', 'in-ear', 'over-ear');
-  if (q.includes('chống ồn') || q.includes('chong on')) add('noise cancelling', 'noise canceling', 'anc');
-  if (q.includes('loa')) add('speaker', 'speakers', 'bluetooth speaker');
-  if (q.includes('bàn phím') || q.includes('ban phim')) add('keyboard', 'mechanical keyboard');
-  if (q.includes('chuột') || q.includes('chuot')) add('mouse', 'wireless mouse');
-  if (q.includes('màn hình') || q.includes('man hinh')) add('monitor', 'display', '4k monitor');
-  if (q.includes('laptop')) add('notebook', 'ultrabook');
-  if (q.includes('điện thoại') || q.includes('dien thoai')) add('phone', 'smartphone');
-  if (q.includes('máy tính bảng') || q.includes('may tinh bang')) add('tablet', 'ipad');
-  if (q.includes('pin dự phòng') || q.includes('pin du phong')) add('power bank', 'powerbank');
-  if (q.includes('sạc') || q.includes('sac')) add('charger', 'charging');
+  // Keep this English-only; vector search still works well for other languages.
+  if (q.includes('headphone') || q.includes('earbud')) add('headphone', 'headphones', 'earbuds', 'in-ear', 'over-ear');
+  if (q.includes('noise cancel') || q.includes('anc')) add('noise cancelling', 'noise canceling', 'anc');
+  if (q.includes('speaker')) add('speaker', 'speakers', 'bluetooth speaker');
+  if (q.includes('keyboard')) add('keyboard', 'mechanical keyboard');
+  if (q.includes('mouse')) add('mouse', 'wireless mouse');
+  if (q.includes('monitor') || q.includes('display')) add('monitor', 'display', '4k monitor');
+  if (q.includes('laptop') || q.includes('notebook') || q.includes('ultrabook')) add('laptop', 'notebook', 'ultrabook');
+  if (q.includes('phone') || q.includes('smartphone')) add('phone', 'smartphone');
+  if (q.includes('tablet') || q.includes('ipad')) add('tablet', 'ipad');
+  if (q.includes('power bank') || q.includes('powerbank')) add('power bank', 'powerbank');
+  if (q.includes('charger') || q.includes('charging')) add('charger', 'charging');
 
   // Also break into tokens to help partial matching.
   for (const token of q.split(' ')) {
@@ -84,19 +93,17 @@ type Intent =
   | null;
 
 function inferIntent(query: string): Intent {
-  const q = normalizeText(query).toLowerCase();
+  const q = normalizeForMatching(query);
   if (!q) return null;
 
-  if (q.includes("tai nghe") || q.includes("headphone") || q.includes("earbud")) return "headphones";
-  if (q.includes("điện thoại") || q.includes("dien thoai") || q.includes("iphone") || q.includes("smartphone") || q.includes("phone"))
-    return "phone";
-  if (q.includes("camera") || q.includes("máy ảnh") || q.includes("may anh") || q.includes("gopro") || q.includes("dslr"))
-    return "camera";
+  if (q.includes("headphone") || q.includes("earbud")) return "headphones";
+  if (q.includes("iphone") || q.includes("smartphone") || q.includes("phone")) return "phone";
+  if (q.includes("camera") || q.includes("gopro") || q.includes("dslr")) return "camera";
   if (q.includes("laptop") || q.includes("notebook") || q.includes("macbook") || q.includes("ultrabook")) return "laptop";
-  if (q.includes("màn hình") || q.includes("man hinh") || q.includes("monitor") || q.includes("display")) return "monitor";
-  if (q.includes("bàn phím") || q.includes("ban phim") || q.includes("keyboard")) return "keyboard";
-  if (q.includes("chuột") || q.includes("chuot") || q.includes("mouse")) return "mouse";
-  if (q.includes("loa") || q.includes("speaker")) return "speaker";
+  if (q.includes("monitor") || q.includes("display")) return "monitor";
+  if (q.includes("keyboard")) return "keyboard";
+  if (q.includes("mouse")) return "mouse";
+  if (q.includes("speaker")) return "speaker";
 
   return null;
 }
@@ -133,7 +140,6 @@ function matchesIntent(product: any, intent: Intent) {
 
       // Require at least one positive headphone signal.
       const positive = [
-        "tai nghe",
         "headphone",
         "headphones",
         "earbud",
@@ -150,19 +156,19 @@ function matchesIntent(product: any, intent: Intent) {
 
       return matchesNameOrDesc || matchesCategory;
     case "phone":
-      return hasAny(["điện thoại", "dien thoai", "phone", "smartphone", "iphone", "android", "samsung", "pixel"]);
+      return hasAny(["phone", "smartphone", "iphone", "android", "samsung", "pixel"]);
     case "camera":
-      return hasAny(["camera", "máy ảnh", "may anh", "gopro", "dslr", "mirrorless", "lens", "ống kính", "ong kinh"]);
+      return hasAny(["camera", "gopro", "dslr", "mirrorless", "lens"]);
     case "laptop":
       return hasAny(["laptop", "notebook", "macbook", "ultrabook", "thinkpad", "xps"]);
     case "monitor":
-      return hasAny(["monitor", "màn hình", "man hinh", "display", "4k"]);
+      return hasAny(["monitor", "display", "4k"]);
     case "keyboard":
-      return hasAny(["keyboard", "bàn phím", "ban phim", "mechanical", "switch"]);
+      return hasAny(["keyboard", "mechanical", "switch"]);
     case "mouse":
-      return hasAny(["mouse", "chuột", "chuot", "dpi", "wireless"]);
+      return hasAny(["mouse", "dpi", "wireless"]);
     case "speaker":
-      return hasAny(["speaker", "loa", "bluetooth", "soundbar"]);
+      return hasAny(["speaker", "bluetooth", "soundbar"]);
     default:
       return true;
   }
@@ -218,17 +224,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Khởi tạo Gemini
+    // 1) Initialize Gemini
     const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-    // 2. Khởi tạo Supabase (Dùng Service Key để có quyền search full database)
+    // 2) Initialize Supabase (Service role key required for full DB search)
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false },
     });
 
-    // --- HYBRID SEARCH ---
-    // 1) Keyword search: bắt đúng chữ (iphone 15, macbook...)
-    // 2) Vector search: bắt ý định (điện thoại chụp ảnh đẹp...)
+    // Hybrid search:
+    // 1) Keyword search: literal terms (iphone 15, macbook...)
+    // 2) Vector search: semantic intent
 
     const q = normalizeText(query);
     const expandedTerms = expandQueryTerms(q);

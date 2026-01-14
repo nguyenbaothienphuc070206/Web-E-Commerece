@@ -399,7 +399,7 @@ export const DISCOUNTS: Discount[] = [
   {
     id: 2,
     title: "Laptop Special",
-    description: "Get 3,000,000đ off on laptops over 30M",
+    description: "Get 3,000,000 VND off on laptops over 30M",
     code: "LAPTOP3M",
     discount: 3000000,
     validUntil: "2025-11-30",

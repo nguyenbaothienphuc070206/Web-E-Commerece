@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     if (!adminSeedSecret) {
       return NextResponse.json(
-        { error: "Thiếu ADMIN_SEED_SECRET trong .env.local (để bảo vệ endpoint seed)." },
+        { error: "Missing ADMIN_SEED_SECRET. Set it in your server environment to protect this endpoint." },
         { status: 500 }
       );
     }
@@ -39,14 +39,14 @@ export async function POST(req: Request) {
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(
-        { error: "Thiếu cấu hình Supabase (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)." },
+        { error: "Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)." },
         { status: 500 }
       );
     }
 
     if (!geminiApiKey) {
       return NextResponse.json(
-        { error: "Thiếu GEMINI_API_KEY." },
+        { error: "Missing GEMINI_API_KEY." },
         { status: 500 }
       );
     }
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       const embedding = result.embedding?.values;
       if (!Array.isArray(embedding) || embedding.length === 0) {
         return NextResponse.json(
-          { error: `Không tạo được embedding cho: ${p.name}` },
+          { error: `Failed to create an embedding for: ${p.name}` },
           { status: 502 }
         );
       }

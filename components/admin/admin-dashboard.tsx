@@ -61,7 +61,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h4 className="font-medium">PHASE 1 — Ingestion</h4>
-            <p className="text-sm text-muted-foreground">Nhập sản phẩm thật + tự tạo embedding và nạp vào Supabase.</p>
+            <p className="text-sm text-muted-foreground">Import products, generate embeddings, and save them to Supabase.</p>
           </div>
           <Button
             variant="outline"
@@ -70,26 +70,30 @@ export default function AdminDashboard() {
               setSeedLoading(true)
               try {
                 await seedProductsAction()
-                alert("✅ Seed xong (xem console/Supabase để kiểm tra)")
+                alert("Seed completed. Check Supabase to verify.")
               } catch (e: any) {
-                alert("❌ Seed lỗi: " + (e?.message || "Unknown"))
+                alert("Seed failed: " + (e?.message || "Unknown error"))
               } finally {
                 setSeedLoading(false)
               }
             }}
           >
-            {seedLoading ? "Seeding..." : "Seed batch từ PRODUCTS"}
+            {seedLoading ? "Seeding..." : "Seed from PRODUCTS"}
           </Button>
         </div>
 
         <form action={createAction} className="mt-4 grid gap-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-sm mb-1">Tên sản phẩm</label>
-              <input name="name" className="w-full h-10 rounded-lg border border-border bg-background px-3" placeholder='Ví dụ: iPhone 15 Pro Max' />
+              <label className="block text-sm mb-1">Product name</label>
+              <input
+                name="name"
+                className="w-full h-10 rounded-lg border border-border bg-background px-3"
+                placeholder="e.g., iPhone 15 Pro Max"
+              />
             </div>
             <div>
-              <label className="block text-sm mb-1">Giá (VND)</label>
+              <label className="block text-sm mb-1">Price (VND)</label>
               <input name="price" type="number" className="w-full h-10 rounded-lg border border-border bg-background px-3" placeholder="29990000" />
             </div>
           </div>
@@ -98,7 +102,7 @@ export default function AdminDashboard() {
             <div>
               <label className="block text-sm mb-1">Category</label>
               <select name="category" className="w-full h-10 rounded-lg border border-border bg-background px-3">
-                <option value="">(Không chọn)</option>
+                <option value="">(Optional)</option>
                 {CATEGORIES.filter((c) => c !== "All").map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -113,27 +117,31 @@ export default function AdminDashboard() {
           </div>
 
           <div>
-            <label className="block text-sm mb-1">Image URL (tuỳ chọn)</label>
+            <label className="block text-sm mb-1">Image URL (optional)</label>
             <input name="imageUrl" className="w-full h-10 rounded-lg border border-border bg-background px-3" placeholder="https://..." />
           </div>
 
           <div>
-            <label className="block text-sm mb-1">Mô tả</label>
-            <textarea name="description" className="w-full min-h-24 rounded-lg border border-border bg-background px-3 py-2" placeholder="Mô tả ngắn..." />
+            <label className="block text-sm mb-1">Description</label>
+            <textarea
+              name="description"
+              className="w-full min-h-24 rounded-lg border border-border bg-background px-3 py-2"
+              placeholder="Short description..."
+            />
             <label className="mt-2 inline-flex items-center gap-2 text-sm text-muted-foreground">
               <input name="autoDescribe" type="checkbox" className="h-4 w-4" />
-              Nếu để trống mô tả, dùng Gemini Vision nhìn ảnh để viết mô tả
+              If empty, generate the description from the image using Gemini Vision.
             </label>
           </div>
 
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={createPending}>
-              {createPending ? "Đang nạp..." : "Nạp sản phẩm"}
+              {createPending ? "Saving..." : "Save product"}
             </Button>
             {createState?.success ? (
               <span className="text-sm text-foreground">{createState.message}</span>
             ) : createState?.success === false ? (
-              <span className="text-sm text-destructive">❌ {createState.error}</span>
+              <span className="text-sm text-destructive">{createState.error}</span>
             ) : null}
           </div>
         </form>
