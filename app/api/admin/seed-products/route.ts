@@ -2,23 +2,28 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PRODUCTS } from "@/lib/constants";
+import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
 
 function getAdminSecretFromRequest(req: Request): string {
   const headerSecret = req.headers.get("x-admin-secret");
   if (headerSecret) return headerSecret;
 
-  // Optional fallback: allow passing via query string for quick manual calls
-  // (still protected by the same server-side env secret)
-  try {
-    const url = new URL(req.url);
-    return url.searchParams.get("secret") || "";
-  } catch {
-    return "";
-  }
+  // Intentionally do not accept secrets via query params (leaks via logs/referrers).
+  return "";
 }
 
 export async function POST(req: Request) {
   try {
+    const ip = getRequestIp(req);
+    const rl = await rateLimit({ key: `admin:seed-products:${ip}`, limit: 2, windowMs: 60 * 60_000 });
+    if (!rl.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
     const adminSeedSecret = process.env.ADMIN_SEED_SECRET;
     const providedSecret = getAdminSecretFromRequest(req);
 

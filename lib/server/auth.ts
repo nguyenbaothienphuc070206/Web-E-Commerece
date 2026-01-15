@@ -10,8 +10,12 @@ export type SessionUser = {
 
 const COOKIE_NAME = "wec_session";
 
-function getAuthSecret() {
-  const secret = process.env.AUTH_SECRET;
+function getAuthSecretOrNull() {
+  return process.env.AUTH_SECRET || null;
+}
+
+function requireAuthSecret(): string {
+  const secret = getAuthSecretOrNull();
   if (!secret) throw new Error("Missing AUTH_SECRET.");
   return secret;
 }
@@ -55,16 +59,19 @@ export function createSessionToken(user: SessionUser, ttlSeconds: number) {
 
   const payloadJson = JSON.stringify(payload);
   const payloadB64 = base64UrlEncode(payloadJson);
-  const sig = sign(payloadB64, getAuthSecret());
+  const sig = sign(payloadB64, requireAuthSecret());
   return `${payloadB64}.${sig}`;
 }
 
 export function verifySessionToken(token: string): SessionUser | null {
   try {
+    const secret = getAuthSecretOrNull();
+    if (!secret) return null;
+
     const [payloadB64, sig] = token.split(".");
     if (!payloadB64 || !sig) return null;
 
-    const expected = sign(payloadB64, getAuthSecret());
+    const expected = sign(payloadB64, secret);
     const a = Buffer.from(sig);
     const b = Buffer.from(expected);
     if (a.length !== b.length) return null;

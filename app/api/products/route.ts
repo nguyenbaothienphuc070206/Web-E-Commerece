@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { PRODUCTS } from "@/lib/constants"
+import { getSessionUserFromCookies } from "@/lib/server/auth"
+import { getRequestIp, rateLimit } from "@/lib/server/rate-limit"
 
 const products = PRODUCTS.map((p) => ({
   id: p.id,
@@ -36,7 +38,33 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const user = await getSessionUserFromCookies()
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+    }
+    if (user.role !== "admin") {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 })
+    }
+
+    const ip = getRequestIp(request)
+    const rl = await rateLimit({ key: `products:create:${ip}`, limit: 20, windowMs: 60_000 })
+    if (!rl.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000))
+      return NextResponse.json(
+        { success: false, error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      )
+    }
+
     const body = await request.json()
+
+    // Basic payload caps
+    if (typeof body?.name === "string" && body.name.length > 120) {
+      return NextResponse.json({ success: false, error: "Invalid name" }, { status: 400 })
+    }
+    if (typeof body?.description === "string" && body.description.length > 2000) {
+      return NextResponse.json({ success: false, error: "Description too long" }, { status: 400 })
+    }
 
     // Validate product data
     if (!body.name || !body.price || !body.category) {
