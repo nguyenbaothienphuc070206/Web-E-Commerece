@@ -10,6 +10,12 @@ import { WishlistProvider } from "@/components/wishlist/wishlist-context"
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
+export const metadata: Metadata = {
+  icons: {
+    icon: "/favicon.ico",
+  },
+}
+
 
 export default function RootLayout({
   children,

@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Brand Info */}
           <div>
             <div className="flex items-center gap-2 font-bold text-xl mb-4">
-              <img src="/CoCa.ico" alt="Logo" className="h-10 w-10 rounded-full mr-2 bg-white" />
+              <img src="/favicon.ico" alt="Logo" className="h-10 w-10 rounded-full mr-2 bg-white" />
               <span>TechMart</span>
             </div>
             <p className="text-gray-400 text-sm mb-4">

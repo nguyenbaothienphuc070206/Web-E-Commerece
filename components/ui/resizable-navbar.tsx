@@ -236,7 +236,7 @@ export const NavbarLogo = () => {
       href="#"
       className="relative z-20 mr-4 flex items-center gap-2 px-2 py-1 text-xl font-bold text"
     >
-        <img src="/CoCa.ico" alt="Logo" className="h-10 w-10 rounded-full mr-2 bg-white" />
+        <img src="/favicon.ico" alt="Logo" className="h-10 w-10 rounded-full mr-2 bg-white" />
       <span 
         className="text-xl font-extrabold tracking-tight font-sans uppercase 
                     text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-black/90 dark:to-white"
