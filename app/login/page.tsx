@@ -13,16 +13,14 @@ export default function LoginPage() {
       const r = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, name }) })
       const j = await r.json()
       if (j?.success) {
-        localStorage.setItem("user", JSON.stringify(j.data))
-        window.location.href = "/"
+        window.location.href = "/account"
         return
       }
     } else {
       const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) })
       const j = await r.json()
       if (j?.success) {
-        localStorage.setItem("user", JSON.stringify(j.data))
-        window.location.href = "/"
+        window.location.href = "/account"
         return
       }
     }

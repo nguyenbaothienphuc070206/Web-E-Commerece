@@ -10,7 +10,6 @@ export default function AdminLoginPage() {
     const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) })
     const j = await r.json()
     if (j?.success && j.data?.role === "admin") {
-      localStorage.setItem("user", JSON.stringify(j.data))
       window.location.href = "/admin"
       return
     }

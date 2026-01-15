@@ -1,25 +1,12 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import AdminDashboard from "@/components/admin/admin-dashboard"
 import OrderManagement from "@/components/orders/order-management"
+import { getSessionUserFromCookies } from "@/lib/server/auth";
+import { redirect } from "next/navigation";
 
-export default function AdminPage() {
-  const [ok, setOk] = useState(false)
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem("user")
-      const u = s ? JSON.parse(s) : null
-      setOk(!!u && u.role === "admin")
-    } catch {}
-  }, [])
-  if (!ok) return (
-    <main className="min-h-screen bg-background pt-24">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <a href="/admin/login" className="underline">Admin sign in</a>
-      </div>
-    </main>
-  )
+export default async function AdminPage() {
+  const user = await getSessionUserFromCookies();
+  if (!user || user.role !== "admin") redirect("/admin/login");
+
   return (
     <main className="min-h-screen bg-background max-w-7xl mx-auto px-4 py-6 space-y-6">
       <AdminDashboard />
