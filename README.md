@@ -63,14 +63,14 @@ Open http://localhost:3000
 
 ## Deploy to Vercel (public link)
 
-1) Push your code to GitHub.
-2) Go to https://vercel.com/new and import your GitHub repository.
-3) In **Project Settings → General → Root Directory**, set it to `Web-E-Commerece-main`.
-4) In **Project Settings → Environment Variables**, add at least:
-	- `AUTH_SECRET`
-	- `ADMIN_EMAIL` and `ADMIN_PASSWORD` (if you need `/admin`)
-	- Plus any keys you use: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ADMIN_SEED_SECRET`
-5) Click **Deploy**.
+1. Push your code to GitHub.
+2. Go to https://vercel.com/new and import your GitHub repository.
+3. In **Project Settings → General → Root Directory**, set it to `Web-E-Commerece-main`.
+4. In **Project Settings → Environment Variables**, add at least:
+   - `AUTH_SECRET`
+   - `ADMIN_EMAIL` and `ADMIN_PASSWORD` (if you need `/admin`)
+   - Plus any keys you use: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ADMIN_SEED_SECRET`
+5. Click **Deploy**.
 
 After deploy, Vercel will give you a public URL like:
 
