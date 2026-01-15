@@ -27,8 +27,13 @@ function normalizeForMatching(input: string) {
 }
 
 function escapeForIlikeTerm(term: string) {
-  // PostgREST filter string is comma-separated; avoid breaking the OR string.
-  return term.replace(/[%_,]/g, ' ').replace(/\s+/g, ' ').trim();
+  // Build a safe PostgREST filter snippet by stripping punctuation that could
+  // break the `.or()` CSV filter syntax. Keep letters/numbers/spaces/hyphens.
+  return term
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
 }
 
 function expandQueryTerms(query: string) {
@@ -200,6 +205,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing search query' }, { status: 400 });
     }
 
+    if (query.length > 300) {
+      return NextResponse.json({ error: 'Query is too long' }, { status: 400 });
+    }
+
     const cacheKey = JSON.stringify({ query, filters });
     const cached = searchCache.get(cacheKey);
     if (cached) {
@@ -207,12 +216,12 @@ export async function POST(req: Request) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
-        { error: 'Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).' },
+        { error: 'Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY).' },
         { status: 500 }
       );
     }
@@ -227,8 +236,8 @@ export async function POST(req: Request) {
     // 1) Initialize Gemini
     const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-    // 2) Initialize Supabase (Service role key required for full DB search)
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    // 2) Initialize Supabase (anon key; do NOT use service role on public endpoints)
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: { persistSession: false },
     });
 
@@ -267,21 +276,26 @@ export async function POST(req: Request) {
       );
     }
 
-    const vectorPromise = supabase.rpc('match_products', {
-      query_embedding: embedding,
-      match_threshold: 0.25,
-      match_count: 10,
-    });
+    const vectorPromise = supabase
+      .rpc('match_products', {
+        query_embedding: embedding,
+        match_threshold: 0.25,
+        match_count: 10,
+      })
+      .then(
+        (res) => res,
+        (e: any) => ({ data: null, error: { message: String(e?.message ?? e ?? "Vector RPC failed") } })
+      );
 
     const [{ data: keywordRows, error: keywordError }, { data: vectorRows, error: vectorError }] = await Promise.all([
       keywordPromise,
-      vectorPromise,
+      vectorPromise as any,
     ]);
 
     if (keywordError) console.warn('Keyword search error:', keywordError.message);
     if (vectorError) {
-      console.error('Vector search error:', vectorError);
-      return NextResponse.json({ error: vectorError.message }, { status: 500 });
+      // Common on locked-down DBs with RLS: RPC denied. Fall back to keyword-only.
+      console.warn('Vector search unavailable (falling back to keyword-only):', vectorError.message);
     }
 
     const merged = new Map<string, any>();

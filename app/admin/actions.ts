@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { PRODUCTS } from "@/lib/constants"
+import { getSessionUserFromCookies } from "@/lib/server/auth"
 
 type ActionResult =
   | { success: true; message: string; inserted?: number }
@@ -64,6 +65,9 @@ async function fetchImageAsInlineData(imageUrl: string): Promise<{ inlineData: {
 
 export async function createProductAction(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
+    const user = await getSessionUserFromCookies()
+    if (!user || user.role !== "admin") return { success: false, error: "Unauthorized" }
+
     const name = String(formData.get("name") || "").trim()
     const descriptionInput = String(formData.get("description") || "").trim()
     const imageUrl = String(formData.get("imageUrl") || "").trim()
@@ -135,6 +139,9 @@ function chunk<T>(arr: T[], size: number): T[][] {
 
 export async function seedProductsAction(): Promise<ActionResult> {
   try {
+    const user = await getSessionUserFromCookies()
+    if (!user || user.role !== "admin") return { success: false, error: "Unauthorized" }
+
     const genAI = getGemini()
     const embedModel = genAI.getGenerativeModel({ model: "text-embedding-004" })
 

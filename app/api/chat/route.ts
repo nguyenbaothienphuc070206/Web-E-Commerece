@@ -24,7 +24,11 @@ function normalizeForSearch(input: string) {
 }
 
 function escapeForIlikeTerm(term: string) {
-  return term.replace(/[%_,]/g, " ").replace(/\s+/g, " ").trim();
+  return term
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
 }
 
 function expandQueryTerms(query: string) {
@@ -153,12 +157,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing message" }, { status: 400 });
     }
 
+    if (message.length > 300) {
+      return NextResponse.json({ error: "Message is too long" }, { status: 400 });
+    }
+
     const cacheKey = JSON.stringify({ message, history: history.slice(-6) });
     const cached = chatCache.get(cacheKey);
     if (cached) return NextResponse.json({ ...cached, cached: true });
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
     if (!geminiApiKey) {
@@ -168,15 +176,15 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
-        { error: "Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)." },
+        { error: "Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)." },
         { status: 500 }
       );
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: { persistSession: false },
     });
 
@@ -212,19 +220,24 @@ export async function POST(req: Request) {
       );
     }
 
-    const vectorPromise = supabase.rpc("match_products", {
-      query_embedding: embedding,
-      match_threshold: 0.25,
-      match_count: 8,
-    });
+    const vectorPromise = supabase
+      .rpc("match_products", {
+        query_embedding: embedding,
+        match_threshold: 0.25,
+        match_count: 8,
+      })
+      .then(
+        (res) => res,
+        (e: any) => ({ data: null, error: { message: String(e?.message ?? e ?? "Vector RPC failed") } })
+      );
 
     const [{ data: keywordRows, error: keywordError }, { data: vectorRows, error: vectorError }] =
-      await Promise.all([keywordPromise, vectorPromise]);
+      await Promise.all([keywordPromise, vectorPromise as any]);
 
     if (keywordError) console.warn("Chat keyword search error:", keywordError.message);
     if (vectorError) {
-      console.error("Chat vector search error:", vectorError);
-      return NextResponse.json({ error: vectorError.message }, { status: 500 });
+      // Common on locked-down DBs with RLS: RPC denied. Fall back to keyword-only.
+      console.warn("Chat vector search unavailable (falling back to keyword-only):", vectorError.message);
     }
 
     const merged = new Map<string, any>();

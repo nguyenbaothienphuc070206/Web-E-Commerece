@@ -1,14 +1,34 @@
 import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
 import { createSessionToken, getSessionCookieName } from "@/lib/server/auth";
+import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
 import { ensureSeedAdmin, toPublicUser, users, type User } from "../_store";
 
 export async function POST(request: Request) {
   try {
+    const ip = getRequestIp(request);
+    const rlIp = await rateLimit({ key: `auth:register:ip:${ip}`, limit: 6, windowMs: 60_000 });
+    if (!rlIp.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded. Please try again shortly." },
+        { status: 429, headers: { "x-ratelimit-reset": String(rlIp.resetAt) } }
+      );
+    }
+
     await ensureSeedAdmin();
     const body = await request.json()
     const { email, password, name } = body || {}
     if (!email || !password) return NextResponse.json({ success: false, error: "Missing" }, { status: 400 })
+
+    const normalizedEmailKey = String(email).toLowerCase().trim();
+    const rlEmail = await rateLimit({ key: `auth:register:email:${normalizedEmailKey}`, limit: 6, windowMs: 60_000 });
+    if (!rlEmail.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded. Please try again shortly." },
+        { status: 429, headers: { "x-ratelimit-reset": String(rlEmail.resetAt) } }
+      );
+    }
+
     const normalizedEmail = String(email).toLowerCase();
     if (users.find((u) => u.email.toLowerCase() === normalizedEmail))
       return NextResponse.json({ success: false, error: "Exists" }, { status: 409 })
