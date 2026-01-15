@@ -33,6 +33,12 @@ This project uses these server-side variables (some features are optional):
 - `OPENAI_API_KEY` (required only for `/api/embed`)
 - `ADMIN_SEED_SECRET` (required only for admin seed endpoint)
 
+Auth (required for login/session):
+
+- `AUTH_SECRET` (required, random secret used to sign the HttpOnly session cookie)
+- `ADMIN_EMAIL` (optional, seeds an admin user at runtime)
+- `ADMIN_PASSWORD` (optional, seeds an admin user at runtime)
+
 ## Development
 
 Run the dev server:
@@ -54,3 +60,20 @@ Open http://localhost:3000
 
 - API routes live under `app/api/*`.
 - If you do not configure Supabase/Gemini, search/chat features will return server configuration errors.
+
+## Deploy to Vercel (public link)
+
+1) Push your code to GitHub.
+2) Go to https://vercel.com/new and import your GitHub repository.
+3) In **Project Settings → General → Root Directory**, set it to `Web-E-Commerece-main`.
+4) In **Project Settings → Environment Variables**, add at least:
+	- `AUTH_SECRET`
+	- `ADMIN_EMAIL` and `ADMIN_PASSWORD` (if you need `/admin`)
+	- Plus any keys you use: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ADMIN_SEED_SECRET`
+5) Click **Deploy**.
+
+After deploy, Vercel will give you a public URL like:
+
+- `https://<your-project>.vercel.app`
+
+That URL stays working even if you close VS Code or turn off your PC.
