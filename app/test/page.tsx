@@ -1,5 +1,5 @@
 "use client";
-import { supabase } from '@/lib/supabaseClient';
+import { hasSupabasePublicConfig, supabase } from "@/lib/supabaseClient";
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Footer from '@/components/footer';
@@ -12,6 +12,11 @@ export default function PipelineTest() {
   const isError = status.includes("❌");
 
   const runTest = async () => {
+    if (!hasSupabasePublicConfig || !supabase) {
+      setStatus("❌ Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY");
+      return;
+    }
+
     setLoading(true);
     setStatus("⏳ Initializing Ingestion Pipeline...");
     
@@ -41,6 +46,17 @@ export default function PipelineTest() {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="flex-1 px-4 pt-28 pb-10 sm:pt-32">
         <div className="mx-auto max-w-5xl">
+          {!hasSupabasePublicConfig && (
+            <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+              <div className="font-medium text-destructive">Supabase is not configured</div>
+              <div className="mt-1 text-muted-foreground">
+                Add <span className="font-medium text-foreground">NEXT_PUBLIC_SUPABASE_URL</span> and{' '}
+                <span className="font-medium text-foreground">NEXT_PUBLIC_SUPABASE_ANON_KEY</span> in your Vercel Environment Variables
+                (or in <span className="font-medium text-foreground">.env.local</span>) to enable this test page.
+              </div>
+            </div>
+          )}
+
           <header className="mb-6 rounded-xl border bg-card p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
