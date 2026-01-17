@@ -61,6 +61,51 @@ Open http://localhost:3000
 - API routes live under `app/api/*`.
 - If you do not configure Supabase/Gemini, search/chat features will return server configuration errors.
 
+## Database (Supabase) setup
+
+This repo supports **real persistence** (users / carts / orders / products) when Supabase is configured.
+
+1. Create a Supabase project.
+2. Open **SQL Editor** and run the schema in:
+   - `supabase/schema.sql`
+3. Create `.env.local` from `.env.example` and fill at least:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `AUTH_SECRET`
+
+After that:
+
+- `/api/products` reads from the `products` table (fallbacks to mock constants if Supabase is not configured).
+- `/api/orders` persists orders to the `orders` table.
+- `/api/cart` persists carts to the `carts` table.
+- `/api/auth/register` and `/api/auth/login` persist users to the `users` table (fallbacks to in-memory when Supabase is not configured).
+
+## Email notifications (real SMTP)
+
+This repo can send **real email notifications** via `/api/notifications` (used by checkout and admin order updates).
+
+1. Fill these variables in `.env.local`:
+   - `SMTP_HOST`
+   - `SMTP_PORT`
+   - `SMTP_USER`
+   - `SMTP_PASS`
+   - Optional: `SMTP_FROM` (defaults to `SMTP_USER`)
+   - Optional: `SMTP_SECURE` (`true`/`false`, defaults to `true` when port is `465`)
+
+If SMTP is not configured, `/api/notifications` returns `503`.
+
+## Security hardening (RLS)
+
+If you want **strong DB security**, you can enable strict RLS and remove direct access for `anon`/`authenticated`.
+
+1. Run the base schema:
+   - `supabase/schema.sql`
+2. Then run RLS hardening:
+   - `supabase/rls.sql`
+
+In this mode the app expects server-side routes to use `SUPABASE_SERVICE_ROLE_KEY` (server-only) for DB reads/writes.
+
 ## Deploy to Vercel (public link)
 
 1. Push your code to GitHub.

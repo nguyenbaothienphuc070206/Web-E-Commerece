@@ -85,18 +85,9 @@ export default function Checkout() {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || "Failed to place the order.")
 
-      await fetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: email || phone,
-          type: "order_created",
-          message: `Order #${data.data.id} has been created.`,
-        }),
-      })
-
       clearCart()
-      showSuccess(`Order placed successfully. Order ID: #${data.data.id}`)
+      const statusText = data?.data?.status ? ` (${data.data.status})` : ""
+      showSuccess(`Order placed successfully. Order ID: #${data.data.id}${statusText}`)
     } catch (err: any) {
       showError(err?.message || "Failed to place the order.")
     } finally {

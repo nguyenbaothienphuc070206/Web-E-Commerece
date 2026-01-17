@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSessionUserFromCookies } from "@/lib/server/auth"
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit"
+import { getSupabaseAdminClient, hasSupabaseServiceConfig } from "@/lib/server/supabase"
 
 // This route provides a simple in-memory stock update wrapper around products mock.
 // Note: Because the main products mock is a const in another module, this route will not
@@ -34,7 +35,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: "Invalid stock" }, { status: 400 })
     }
 
-    // In a real app update DB. Here just return success
+    if (hasSupabaseServiceConfig) {
+      const supabase = getSupabaseAdminClient()
+      const { data, error } = await supabase
+        .from("products")
+        .update({ stock, in_stock: stock > 0 })
+        .eq("id", Number(productId))
+        .select("id,stock,in_stock")
+        .maybeSingle()
+
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      if (!data) return NextResponse.json({ success: false, error: "Product not found" }, { status: 404 })
+      return NextResponse.json({ success: true, data: { productId: data.id, stock: data.stock, inStock: data.in_stock } })
+    }
+
+    // Demo fallback
     return NextResponse.json({ success: true, data: { productId, stock } })
   } catch (error) {
     return NextResponse.json({ success: false, error: "Failed to update stock" }, { status: 500 })

@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
 import { createSessionToken, getSessionCookieName } from "@/lib/server/auth";
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
-import { ensureSeedAdmin, toPublicUser, users } from "../_store";
+import { ensureSeedAdmin, findUserByEmail, toPublicUser } from "../_store";
 
 export async function POST(request: Request) {
   try {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = users.find((u) => u.email.toLowerCase() === String(email).toLowerCase());
+    const user = await findUserByEmail(String(email));
     if (!user) return NextResponse.json({ success: false, error: "Invalid" }, { status: 401 })
 
     const ok = await bcrypt.compare(String(password), user.passwordHash);

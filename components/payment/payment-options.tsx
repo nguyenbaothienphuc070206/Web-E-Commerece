@@ -18,16 +18,16 @@ export default function PaymentOptions({ value, onChange }: { value: PaymentMeth
       <label className="flex items-center gap-3">
         <input type="radio" name="payment" checked={value === "card"} onChange={() => onChange("card")} />
         <div>
-          <div className="font-medium">Card</div>
-          <div className="text-sm text-muted-foreground">Pay with a card.</div>
+          <div className="font-medium">Card (Demo)</div>
+          <div className="text-sm text-muted-foreground">Simulated payment. Your order will be marked as paid.</div>
         </div>
       </label>
 
       <label className="flex items-center gap-3">
         <input type="radio" name="payment" checked={value === "vnpay"} onChange={() => onChange("vnpay")} />
         <div>
-          <div className="font-medium">VNPay</div>
-          <div className="text-sm text-muted-foreground">Redirects you to VNPay.</div>
+          <div className="font-medium">VNPay (Demo)</div>
+          <div className="text-sm text-muted-foreground">Simulated redirect + payment success.</div>
         </div>
       </label>
     </div>

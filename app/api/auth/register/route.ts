@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
 import { createSessionToken, getSessionCookieName } from "@/lib/server/auth";
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
-import { ensureSeedAdmin, toPublicUser, users, type User } from "../_store";
+import { ensureSeedAdmin, toPublicUser, createUser, findUserByEmail } from "../_store";
 
 export async function POST(request: Request) {
   try {
@@ -30,12 +30,11 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = String(email).toLowerCase();
-    if (users.find((u) => u.email.toLowerCase() === normalizedEmail))
+    if (await findUserByEmail(normalizedEmail))
       return NextResponse.json({ success: false, error: "Exists" }, { status: 409 })
 
     const passwordHash = await bcrypt.hash(String(password), 10);
-    const user: User = { id: users.length + 1, email: normalizedEmail, passwordHash, name, role: "user" }
-    users.push(user)
+    const user = await createUser({ email: normalizedEmail, passwordHash, name, role: "user" })
 
     const token = createSessionToken({ id: user.id, email: user.email, name: user.name, role: user.role }, 60 * 60 * 24 * 7);
     const res = NextResponse.json({ success: true, data: toPublicUser(user) });

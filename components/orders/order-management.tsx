@@ -34,13 +34,6 @@ export default function OrderManagement() {
       const data = await res.json()
       if (data?.success) {
         setOrders((prev) => prev.map((o) => (o.id === id ? data.data : o)))
-        // notify customer
-        const customer = data.data.customer || {}
-        await fetch("/api/notifications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: customer.email || customer.phone, type: "order_update", message: `Order #${id} is now ${status}` }),
-        })
       }
     } catch (e) {
       console.warn(e)

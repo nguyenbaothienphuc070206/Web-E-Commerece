@@ -1,8 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
 import { TTLCache } from "@/lib/server/ttl-cache";
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit";
+import {
+  getSupabaseAdminClient,
+  getSupabasePublicClient,
+  hasSupabasePublicConfig,
+  hasSupabaseServiceConfig,
+} from "@/lib/server/supabase";
 
 type SearchFilters = {
   category?: string;
@@ -215,13 +220,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ ...cached, cached: true });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!hasSupabaseServiceConfig && !hasSupabasePublicConfig) {
       return NextResponse.json(
-        { error: 'Missing Supabase configuration (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY).' },
+        { error: 'Missing Supabase configuration (set SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY).' },
         { status: 500 }
       );
     }
@@ -236,10 +239,9 @@ export async function POST(req: Request) {
     // 1) Initialize Gemini
     const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-    // 2) Initialize Supabase (anon key; do NOT use service role on public endpoints)
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
-    });
+    // 2) Initialize Supabase.
+    // Recommended: service role (server-only) so DB can be locked down with RLS.
+    const supabase = hasSupabaseServiceConfig ? getSupabaseAdminClient() : getSupabasePublicClient();
 
     // Hybrid search:
     // 1) Keyword search: literal terms (iphone 15, macbook...)

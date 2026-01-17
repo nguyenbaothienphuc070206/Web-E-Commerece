@@ -1,9 +1,67 @@
 import { NextResponse } from "next/server"
 import { getSessionUserFromCookies } from "@/lib/server/auth"
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit"
+import { getSupabaseAdminClient, hasSupabaseServiceConfig } from "@/lib/server/supabase"
 
 // Mock cart data - in production, use sessions/database
 const carts = new Map()
+
+type Cart = { items: any[]; total: number }
+
+async function getDbCart(params: { userId?: number | null; cartKey?: string | null }): Promise<Cart> {
+  const supabase = getSupabaseAdminClient()
+
+  if (params.userId) {
+    const { data, error } = await supabase.from("carts").select("id,items,total").eq("user_id", params.userId).maybeSingle()
+    if (error) throw new Error(error.message)
+    if (!data) return { items: [], total: 0 }
+    return { items: Array.isArray(data.items) ? data.items : [], total: Number(data.total ?? 0) }
+  }
+
+  const key = params.cartKey || "default"
+  const { data, error } = await supabase.from("carts").select("id,items,total").eq("cart_key", key).maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) return { items: [], total: 0 }
+  return { items: Array.isArray(data.items) ? data.items : [], total: Number(data.total ?? 0) }
+}
+
+async function saveDbCart(params: { userId?: number | null; cartKey?: string | null; cart: Cart }): Promise<Cart> {
+  const supabase = getSupabaseAdminClient()
+  const cart = { items: params.cart.items, total: params.cart.total }
+
+  if (params.userId) {
+    const existing = await supabase.from("carts").select("id").eq("user_id", params.userId).maybeSingle()
+    if (existing.error) throw new Error(existing.error.message)
+
+    if (existing.data?.id) {
+      const { data, error } = await supabase
+        .from("carts")
+        .update({ items: cart.items, total: cart.total })
+        .eq("id", existing.data.id)
+        .select("items,total")
+        .single()
+      if (error) throw new Error(error.message)
+      return { items: Array.isArray(data.items) ? data.items : [], total: Number(data.total ?? 0) }
+    }
+
+    const { data, error } = await supabase
+      .from("carts")
+      .insert([{ user_id: params.userId, cart_key: null, items: cart.items, total: cart.total }])
+      .select("items,total")
+      .single()
+    if (error) throw new Error(error.message)
+    return { items: Array.isArray(data.items) ? data.items : [], total: Number(data.total ?? 0) }
+  }
+
+  const cartKey = params.cartKey || "default"
+  const { data, error } = await supabase
+    .from("carts")
+    .upsert([{ user_id: null, cart_key: cartKey, items: cart.items, total: cart.total }], { onConflict: "cart_key" })
+    .select("items,total")
+    .single()
+  if (error) throw new Error(error.message)
+  return { items: Array.isArray(data.items) ? data.items : [], total: Number(data.total ?? 0) }
+}
 
 function normalizeCartId(input: unknown): string {
   const raw = typeof input === "string" ? input : ""
@@ -30,6 +88,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const cartId = user ? `user:${user.id}` : normalizeCartId(searchParams.get("id"))
 
+  if (hasSupabaseServiceConfig) {
+    const cart = await getDbCart({ userId: user?.id ?? null, cartKey: user ? null : cartId })
+    return NextResponse.json({ success: true, data: cart })
+  }
+
   const cart = carts.get(cartId) || { items: [], total: 0 }
 
   return NextResponse.json({
@@ -54,7 +117,9 @@ export async function POST(request: Request) {
     const user = await getSessionUserFromCookies()
     const cartId = user ? `user:${user.id}` : normalizeCartId(body?.cartId)
 
-    const cart = carts.get(cartId) || { items: [], total: 0 }
+    const cart = hasSupabaseServiceConfig
+      ? await getDbCart({ userId: user?.id ?? null, cartKey: user ? null : cartId })
+      : (carts.get(cartId) || { items: [], total: 0 })
 
     // Add item to cart
     const existingItem = cart.items.find((item: any) => item.id === body.productId)
@@ -86,6 +151,11 @@ export async function POST(request: Request) {
     cart.total = cart.items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
 
     carts.set(cartId, cart)
+
+    if (hasSupabaseServiceConfig) {
+      const saved = await saveDbCart({ userId: user?.id ?? null, cartKey: user ? null : cartId, cart })
+      return NextResponse.json({ success: true, data: saved }, { status: 201 })
+    }
 
     return NextResponse.json({ success: true, data: cart }, { status: 201 })
   } catch (error) {
