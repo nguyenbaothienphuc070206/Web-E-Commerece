@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { cookies } from "next/headers";
+import { getServerEnv, requireAuthSecret } from "@/lib/server/env";
 
 export type SessionUser = {
   id: number;
@@ -11,13 +12,13 @@ export type SessionUser = {
 const COOKIE_NAME = "wec_session";
 
 function getAuthSecretOrNull() {
-  return process.env.AUTH_SECRET || null;
-}
-
-function requireAuthSecret(): string {
-  const secret = getAuthSecretOrNull();
-  if (!secret) throw new Error("Missing AUTH_SECRET.");
-  return secret;
+  try {
+    const env = getServerEnv();
+    return env.AUTH_SECRET || null;
+  } catch {
+    // If env is invalid, treat auth as unavailable rather than crashing all routes.
+    return process.env.AUTH_SECRET || null;
+  }
 }
 
 function base64UrlEncode(input: Buffer | string) {

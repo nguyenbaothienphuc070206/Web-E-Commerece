@@ -60,10 +60,18 @@ create table if not exists public.orders (
   total bigint not null default 0,
   promo_code text,
   payment_method text not null default 'cod',
+  payment_provider text,
+  payment_reference text,
+  paid_at timestamptz,
   status text not null default 'pending',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Backward-compatible upgrades (safe to re-run)
+alter table public.orders add column if not exists payment_provider text;
+alter table public.orders add column if not exists payment_reference text;
+alter table public.orders add column if not exists paid_at timestamptz;
 
 create index if not exists orders_user_id_idx on public.orders using btree (user_id);
 create index if not exists orders_created_at_idx on public.orders using btree (created_at desc);

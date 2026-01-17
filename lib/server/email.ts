@@ -1,27 +1,14 @@
 import nodemailer from "nodemailer";
-
-function getEnv(name: string) {
-  return (process.env[name] || "").trim();
-}
+import { getServerEnv, hasSmtpEnv } from "@/lib/server/env";
 
 export function hasSmtpConfig() {
-  return Boolean(getEnv("SMTP_HOST") && getEnv("SMTP_PORT") && getEnv("SMTP_USER") && getEnv("SMTP_PASS"));
+  return hasSmtpEnv();
 }
 
-function parsePort(input: string) {
-  const n = Number(input);
-  if (!Number.isFinite(n) || n <= 0 || n > 65535) throw new Error("Invalid SMTP_PORT");
-  return n;
-}
-
-function shouldUseSecure(port: number, explicit: string) {
-  if (explicit) return explicit === "true" || explicit === "1";
+function shouldUseSecure(port: number, explicit: boolean | undefined) {
+  if (typeof explicit === "boolean") return explicit;
   // Common default: port 465 is implicit TLS.
   return port === 465;
-}
-
-function getFromAddress() {
-  return getEnv("SMTP_FROM") || getEnv("SMTP_USER");
 }
 
 function escapeHtml(text: string) {
@@ -34,14 +21,15 @@ function escapeHtml(text: string) {
 }
 
 export async function sendEmail(input: { to: string; subject: string; text: string; html?: string }) {
-  const host = getEnv("SMTP_HOST");
-  const port = parsePort(getEnv("SMTP_PORT"));
-  const user = getEnv("SMTP_USER");
-  const pass = getEnv("SMTP_PASS");
-  const from = getFromAddress();
-  const secure = shouldUseSecure(port, getEnv("SMTP_SECURE"));
+  const env = getServerEnv();
+  const host = env.SMTP_HOST || "";
+  const port = env.SMTP_PORT || 0;
+  const user = env.SMTP_USER || "";
+  const pass = env.SMTP_PASS || "";
+  const from = (env.SMTP_FROM || env.SMTP_USER || "").trim();
+  const secure = shouldUseSecure(port, env.SMTP_SECURE);
 
-  if (!host || !user || !pass) {
+  if (!host || !port || !user || !pass) {
     throw new Error("Missing SMTP config (SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS)");
   }
   if (!from) {

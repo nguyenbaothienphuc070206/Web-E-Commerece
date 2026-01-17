@@ -20,7 +20,23 @@ export async function POST(request: Request) {
     const { email, password, name } = body || {}
     if (!email || !password) return NextResponse.json({ success: false, error: "Missing" }, { status: 400 })
 
-    const normalizedEmailKey = String(email).toLowerCase().trim();
+    const normalizedEmail = String(email).toLowerCase().trim();
+    if (normalizedEmail.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return NextResponse.json({ success: false, error: "Invalid email" }, { status: 400 })
+    }
+
+    const pass = String(password);
+    // bcrypt only uses first 72 bytes; enforce sane limits.
+    if (pass.length < 8 || pass.length > 72) {
+      return NextResponse.json({ success: false, error: "Password must be 8-72 characters" }, { status: 400 })
+    }
+
+    const displayName = typeof name === "string" ? name.trim() : "";
+    if (displayName && displayName.length > 80) {
+      return NextResponse.json({ success: false, error: "Name too long" }, { status: 400 })
+    }
+
+    const normalizedEmailKey = normalizedEmail;
     const rlEmail = await rateLimit({ key: `auth:register:email:${normalizedEmailKey}`, limit: 6, windowMs: 60_000 });
     if (!rlEmail.allowed) {
       return NextResponse.json(
@@ -29,12 +45,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const normalizedEmail = String(email).toLowerCase();
     if (await findUserByEmail(normalizedEmail))
       return NextResponse.json({ success: false, error: "Exists" }, { status: 409 })
 
-    const passwordHash = await bcrypt.hash(String(password), 10);
-    const user = await createUser({ email: normalizedEmail, passwordHash, name, role: "user" })
+    const passwordHash = await bcrypt.hash(pass, 12);
+    const user = await createUser({ email: normalizedEmail, passwordHash, name: displayName || undefined, role: "user" })
 
     const token = createSessionToken({ id: user.id, email: user.email, name: user.name, role: user.role }, 60 * 60 * 24 * 7);
     const res = NextResponse.json({ success: true, data: toPublicUser(user) });

@@ -94,7 +94,7 @@ export async function ensureSeedAdmin() {
 	const existing = await findUserByEmail(adminEmail);
 	if (existing) return;
 
-	const passwordHash = await bcrypt.hash(adminPassword, 10);
+	const passwordHash = await bcrypt.hash(adminPassword, 12);
 	await createUser({ email: adminEmail, passwordHash, name: "Admin", role: "admin" });
 }
 

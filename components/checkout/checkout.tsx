@@ -59,8 +59,8 @@ export default function Checkout() {
     }
   }
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submit = async (e?: React.SyntheticEvent) => {
+    e?.preventDefault()
     if (!items.length) return showError("Your cart is empty.")
     if (!name || !phone || !address) return showError("Please fill in all required fields.")
     setLoading(true)
@@ -84,6 +84,22 @@ export default function Checkout() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || "Failed to place the order.")
+
+      if (payment === "stripe") {
+        const stripeRes = await fetch("/api/payments/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: data.data.id }),
+        })
+
+        const stripeData = await stripeRes.json()
+        if (!stripeRes.ok) throw new Error(stripeData?.error || "Failed to start Stripe checkout.")
+        const url = stripeData?.data?.url
+        if (!url) throw new Error("Stripe checkout URL missing.")
+
+        window.location.href = url
+        return
+      }
 
       clearCart()
       const statusText = data?.data?.status ? ` (${data.data.status})` : ""

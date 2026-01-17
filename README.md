@@ -83,7 +83,9 @@ After that:
 
 ## Email notifications (real SMTP)
 
-This repo can send **real email notifications** via `/api/notifications` (used by checkout and admin order updates).
+This repo can send **real email notifications** (order confirmation + status updates) from server-side order routes.
+
+Note: `/api/notifications` is **admin-only** and intended for manual testing / admin tooling (to prevent abuse).
 
 1. Fill these variables in `.env.local`:
    - `SMTP_HOST`
@@ -94,6 +96,21 @@ This repo can send **real email notifications** via `/api/notifications` (used b
    - Optional: `SMTP_SECURE` (`true`/`false`, defaults to `true` when port is `465`)
 
 If SMTP is not configured, `/api/notifications` returns `503`.
+
+## Payments (Stripe)
+
+This repo supports **real card payments** via Stripe Checkout.
+
+1. Create a Stripe account and get keys.
+2. Add these variables to `.env.local`:
+   - `STRIPE_SECRET_KEY`
+   - `STRIPE_WEBHOOK_SECRET`
+   - Optional (client): `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+3. Configure a webhook in Stripe Dashboard:
+   - Endpoint URL: `https://<your-domain>/api/payments/stripe/webhook`
+   - Events: `checkout.session.completed`
+
+When Stripe is configured, Checkout offers **Card (Stripe)**. Orders start as `pending_payment` and become `paid` after the webhook.
 
 ## Security hardening (RLS)
 

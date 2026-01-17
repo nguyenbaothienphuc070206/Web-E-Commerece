@@ -1,19 +1,23 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getServerEnv, hasSupabasePublicEnv, hasSupabaseServiceEnv } from "@/lib/server/env";
 
 function getSupabaseUrl() {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const env = getServerEnv();
+  return env.NEXT_PUBLIC_SUPABASE_URL || "";
 }
 
 function getSupabaseAnonKey() {
-  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  const env = getServerEnv();
+  return env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 }
 
 function getSupabaseServiceRoleKey() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const env = getServerEnv();
+  return env.SUPABASE_SERVICE_ROLE_KEY || "";
 }
 
-export const hasSupabasePublicConfig = Boolean(getSupabaseUrl() && getSupabaseAnonKey());
-export const hasSupabaseServiceConfig = Boolean(getSupabaseUrl() && getSupabaseServiceRoleKey());
+export const hasSupabasePublicConfig = hasSupabasePublicEnv();
+export const hasSupabaseServiceConfig = hasSupabaseServiceEnv();
 
 export function getSupabasePublicClient(): SupabaseClient {
   const url = getSupabaseUrl();

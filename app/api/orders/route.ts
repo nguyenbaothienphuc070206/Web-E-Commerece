@@ -106,8 +106,11 @@ export async function POST(request: Request) {
     }
 
     const paymentMethod = body.paymentMethod || "cod"
-    // Demo payment: treat non-COD as paid immediately.
-    const status = paymentMethod === "cod" ? "pending" : "paid"
+    // Payment status rules:
+    // - COD: pending (pay on delivery)
+    // - Stripe: pending_payment (webhook will mark paid)
+    // - Others (demo): paid
+    const status = paymentMethod === "cod" ? "pending" : paymentMethod === "stripe" ? "pending_payment" : "paid"
 
     if (hasSupabaseServiceConfig) {
       const sessionUser = await getSessionUserFromCookies().catch(() => null)
@@ -122,6 +125,7 @@ export async function POST(request: Request) {
         total: body.total || 0,
         promo_code: body.promoCode || null,
         payment_method: paymentMethod,
+        payment_provider: paymentMethod === "stripe" ? "stripe" : null,
         status,
       }
 

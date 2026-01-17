@@ -2,7 +2,7 @@
 
 import React from "react"
 
-export type PaymentMethod = "cod" | "card" | "vnpay"
+export type PaymentMethod = "cod" | "stripe" | "vnpay"
 
 export default function PaymentOptions({ value, onChange }: { value: PaymentMethod; onChange: (m: PaymentMethod) => void }) {
   return (
@@ -16,10 +16,10 @@ export default function PaymentOptions({ value, onChange }: { value: PaymentMeth
       </label>
 
       <label className="flex items-center gap-3">
-        <input type="radio" name="payment" checked={value === "card"} onChange={() => onChange("card")} />
+        <input type="radio" name="payment" checked={value === "stripe"} onChange={() => onChange("stripe")} />
         <div>
-          <div className="font-medium">Card (Demo)</div>
-          <div className="text-sm text-muted-foreground">Simulated payment. Your order will be marked as paid.</div>
+          <div className="font-medium">Card (Stripe)</div>
+          <div className="text-sm text-muted-foreground">Real payment via Stripe (requires server configuration).</div>
         </div>
       </label>
 
