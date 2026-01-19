@@ -4,13 +4,17 @@ import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useActionState } from "react"
 import { createProductAction, seedProductsAction } from "@/app/admin/actions"
-import { CATEGORIES } from "@/lib/constants"
+import AdminLayout from "./admin-layout"
+import DashboardOverview from "./dashboard-overview"
+import ProductManagement from "./product-management"
+import OrderManagement from "@/components/orders/order-management"
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [seedLoading, setSeedLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "orders" | "customers" | "settings">("dashboard")
 
   const [createState, createAction, createPending] = useActionState(createProductAction, null)
 
@@ -44,7 +48,6 @@ export default function AdminDashboard() {
       })
       const data = await res.json()
       if (data?.success) {
-        // For demo, update client state
         setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, stock: newStock } : p)))
       }
     } catch (e) {
@@ -52,152 +55,116 @@ export default function AdminDashboard() {
     }
   }
 
+  // Calculate stats for dashboard
+  const stats = {
+    totalRevenue: orders.reduce((sum, order) => sum + (order.total || 0), 0),
+    totalOrders: orders.length,
+    totalProducts: products.length,
+    totalCustomers: new Set(orders.map(o => o.customer?.email)).size,
+    revenueChange: 12.5,
+    ordersChange: 8.3,
+    productsChange: 3.2,
+    customersChange: 15.7
+  }
+
+  const handleSeedProducts = async () => {
+    setSeedLoading(true)
+    try {
+      const result = await seedProductsAction()
+      if (result.success) {
+        alert(result.message)
+        await fetchAll()
+      } else {
+        alert("Error: " + result.error)
+      }
+    } catch (e: any) {
+      alert("Seed failed: " + (e?.message || "Unknown error"))
+    } finally {
+      setSeedLoading(false)
+    }
+  }
+
   return (
-    <section className="p-6 bg-background rounded">
-      <h3 className="text-lg font-semibold mb-4">Admin Dashboard</h3>
-      {loading && <div>Loading...</div>}
-
-      <div className="mb-6 rounded-xl border bg-card p-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h4 className="font-medium">PHASE 1 — Ingestion</h4>
-            <p className="text-sm text-muted-foreground">Import products, generate embeddings, and save them to Supabase.</p>
-          </div>
-          <Button
-            variant="outline"
-            disabled={seedLoading}
-            onClick={async () => {
-              setSeedLoading(true)
-              try {
-                await seedProductsAction()
-                alert("Seed completed. Check Supabase to verify.")
-              } catch (e: any) {
-                alert("Seed failed: " + (e?.message || "Unknown error"))
-              } finally {
-                setSeedLoading(false)
-              }
-            }}
-          >
-            {seedLoading ? "Seeding..." : "Seed from PRODUCTS"}
-          </Button>
+    <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
+      )}
 
-        <form action={createAction} className="mt-4 grid gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm mb-1">Product name</label>
-              <input
-                name="name"
-                className="w-full h-10 rounded-lg border border-border bg-background px-3"
-                placeholder="e.g., iPhone 15 Pro Max"
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Price (VND)</label>
-              <input name="price" type="number" className="w-full h-10 rounded-lg border border-border bg-background px-3" placeholder="29990000" />
-            </div>
-          </div>
+      {!loading && activeTab === "dashboard" && (
+        <div className="space-y-6">
+          <DashboardOverview
+            stats={stats}
+            recentOrders={orders.slice().reverse().slice(0, 5)}
+            lowStockProducts={lowStock}
+          />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm mb-1">Category</label>
-              <select name="category" className="w-full h-10 rounded-lg border border-border bg-background px-3">
-                <option value="">(Optional)</option>
-                {CATEGORIES.filter((c) => c !== "All").map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Brand</label>
-              <input name="brand" className="w-full h-10 rounded-lg border border-border bg-background px-3" placeholder="Apple / Samsung / ..." />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm mb-1">Image URL (optional)</label>
-            <input name="imageUrl" className="w-full h-10 rounded-lg border border-border bg-background px-3" placeholder="https://..." />
-          </div>
-
-          <div>
-            <label className="block text-sm mb-1">Description</label>
-            <textarea
-              name="description"
-              className="w-full min-h-24 rounded-lg border border-border bg-background px-3 py-2"
-              placeholder="Short description..."
-            />
-            <label className="mt-2 inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <input name="autoDescribe" type="checkbox" className="h-4 w-4" />
-              If empty, generate the description from the image using Gemini Vision.
-            </label>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={createPending}>
-              {createPending ? "Saving..." : "Save product"}
-            </Button>
-            {createState?.success ? (
-              <span className="text-sm text-foreground">{createState.message}</span>
-            ) : createState?.success === false ? (
-              <span className="text-sm text-destructive">{createState.error}</span>
-            ) : null}
-          </div>
-        </form>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h4 className="font-medium mb-3">Products</h4>
-          <div className="space-y-3">
-            {products.map((p) => (
-              <div key={p.id} className="p-3 border rounded flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-sm text-muted-foreground">Stock: {p.stock ?? "—"}</div>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => updateStock(p.id, (p.stock || 0) + 5)}>
-                    +5
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => updateStock(p.id, Math.max(0, (p.stock || 0) - 1))}>
-                    -1
-                  </Button>
-                </div>
+          {/* Seed Products Section */}
+          <div className="bg-card border border-border rounded-lg p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Generate Embeddings</h3>
+                <p className="text-sm text-muted-foreground">
+                  Generate AI embeddings for products that don't have them yet (required for semantic search)
+                </p>
               </div>
-            ))}
-          </div>
-
-          <div className="mt-4">
-            <h5 className="font-medium">Low stock</h5>
-            {lowStock.length ? (
-              <ul className="list-disc ml-5">
-                {lowStock.map((l) => (
-                  <li key={l.id}>{l.name} — {l.stock} left</li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-sm text-muted-foreground">No low stock items</div>
-            )}
+              <Button
+                variant="outline"
+                disabled={seedLoading}
+                onClick={handleSeedProducts}
+                className="shrink-0"
+              >
+                {seedLoading ? "Generating..." : "Generate Embeddings"}
+              </Button>
+            </div>
           </div>
         </div>
+      )}
 
-        <div>
-          <h4 className="font-medium mb-3">Recent Orders</h4>
-          <div className="space-y-3">
-            {orders.slice().reverse().map((o: any) => (
-              <div key={o.id} className="p-3 border rounded">
-                <div className="flex justify-between">
-                  <div>#{o.id} — {(o.total / 1000000).toFixed(1)}M₫</div>
-                  <div className="text-sm">{o.status}</div>
-                </div>
-                <div className="text-sm text-muted-foreground">{o.customer?.name || o.customer?.email}</div>
-              </div>
-            ))}
+      {!loading && activeTab === "products" && (
+        <ProductManagement
+          products={products}
+          onUpdateStock={updateStock}
+          onCreateProduct={createAction}
+          createPending={createPending}
+          createState={createState}
+        />
+      )}
+
+      {!loading && activeTab === "orders" && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">Orders</h2>
+            <p className="text-muted-foreground">Manage customer orders and track shipments</p>
+          </div>
+          <OrderManagement />
+        </div>
+      )}
+
+      {!loading && activeTab === "customers" && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">Customers</h2>
+            <p className="text-muted-foreground">View and manage customer information</p>
+          </div>
+          <div className="bg-card border border-border rounded-lg p-8 text-center">
+            <p className="text-muted-foreground">Customer management coming soon...</p>
           </div>
         </div>
-      </div>
-    </section>
+      )}
+
+      {!loading && activeTab === "settings" && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">Settings</h2>
+            <p className="text-muted-foreground">Configure your store settings</p>
+          </div>
+          <div className="bg-card border border-border rounded-lg p-8 text-center">
+            <p className="text-muted-foreground">Settings panel coming soon...</p>
+          </div>
+        </div>
+      )}
+    </AdminLayout>
   )
 }

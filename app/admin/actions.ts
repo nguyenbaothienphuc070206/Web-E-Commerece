@@ -2,7 +2,6 @@
 
 import { createClient } from "@supabase/supabase-js"
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { PRODUCTS } from "@/lib/constants"
 import { getSessionUserFromCookies } from "@/lib/server/auth"
 
 type ActionResult =
@@ -142,54 +141,62 @@ export async function seedProductsAction(): Promise<ActionResult> {
     const user = await getSessionUserFromCookies()
     if (!user || user.role !== "admin") return { success: false, error: "Unauthorized" }
 
+    const supabase = getSupabaseAdmin()
+    
+    // Fetch all products from Supabase that don't have embeddings
+    const { data: products, error: fetchError } = await supabase
+      .from("products")
+      .select("*")
+      .is("embedding", null)
+
+    if (fetchError) {
+      return { success: false, error: `Failed to fetch products: ${fetchError.message}` }
+    }
+
+    if (!products || products.length === 0) {
+      return { success: true, message: "No products found without embeddings. All products are already processed.", inserted: 0 }
+    }
+
     const genAI = getGemini()
     const embedModel = genAI.getGenerativeModel({ model: "text-embedding-004" })
 
-    let inserted = 0
-    for (const group of chunk(PRODUCTS, 50)) {
-      const rows: any[] = []
+    let updated = 0
+    for (const group of chunk(products, 50)) {
       for (const p of group) {
         const embedText = [
           p.name,
           p.description,
           p.specs,
-          `Category: ${p.category}`,
-          `Brand: ${p.brand}`,
+          p.category && `Category: ${p.category}`,
+          p.brand && `Brand: ${p.brand}`,
         ]
           .filter(Boolean)
           .join("\n")
 
         const embed = await embedModel.embedContent(embedText)
         const embedding = embed.embedding?.values
+        
         if (!Array.isArray(embedding) || embedding.length === 0) {
-          return { success: false, error: `Failed to generate an embedding for: ${p.name}` }
+          console.warn(`Failed to generate embedding for product: ${p.name}`)
+          continue
         }
 
-        rows.push({
-          name: p.name,
-          description: p.description,
-          embedding,
-          price: p.price,
-          image: p.image,
-          category: p.category,
-          brand: p.brand,
-          in_stock: p.inStock,
-        })
-      }
-
-      const supabase = getSupabaseAdmin()
-      const { error } = await supabase.from("products").insert(rows)
-      if (error) {
-        // fallback minimal columns
-        const { error: fallbackErr } = await supabase
+        // Update the product with embedding
+        const { error: updateError } = await supabase
           .from("products")
-          .insert(rows.map(({ name, description, embedding }) => ({ name, description, embedding })))
-        if (fallbackErr) return { success: false, error: fallbackErr.message }
+          .update({ embedding })
+          .eq("id", p.id)
+
+        if (updateError) {
+          console.warn(`Failed to update product ${p.id}:`, updateError.message)
+          continue
+        }
+
+        updated++
       }
-      inserted += rows.length
     }
 
-    return { success: true, message: `Seeded ${inserted} products.`, inserted }
+    return { success: true, message: `Generated embeddings for ${updated} products.`, inserted: updated }
   } catch (e: any) {
     return { success: false, error: e?.message || "Seed failed" }
   }

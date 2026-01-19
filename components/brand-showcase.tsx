@@ -1,10 +1,14 @@
 import Link from "next/link"
 import { SectionHeading } from "@/components/ui/section-heading"
-import { BRANDS } from "@/lib/constants"
+import type { Brand } from "@/lib/types"
 
-export default function BrandShowcase() {
+interface BrandShowcaseProps {
+  brands: Brand[]
+}
+
+export default function BrandShowcase({ brands }: BrandShowcaseProps) {
   // Only show featured brands on homepage
-  const featuredBrands = BRANDS.filter(brand => brand.featured)
+  const featuredBrands = brands.filter(brand => brand.featured)
 
   return (
     <section className="py-16 px-4 bg-background">

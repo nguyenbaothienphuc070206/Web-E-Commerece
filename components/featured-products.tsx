@@ -3,11 +3,15 @@
 import Link from "next/link"
 import { ProductCard } from "@/components/ui/product-card"
 import { SectionHeading } from "@/components/ui/section-heading"
-import { PRODUCTS } from "@/lib/constants"
+import type { Product } from "@/lib/types"
 
-export default function FeaturedProducts() {
+interface FeaturedProductsProps {
+  products: Product[]
+}
+
+export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   // Get first 4 products as featured
-  const featuredProducts = PRODUCTS.slice(0, 4)
+  const featuredProducts = products.slice(0, 4)
 
   return (
     <section className="py-16 px-4 bg-background">

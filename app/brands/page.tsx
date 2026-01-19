@@ -4,9 +4,40 @@ import { PageContainer } from "@/components/ui/page-container"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { Button } from "@/components/ui/button"
 import Footer from "@/components/footer"
-import { BRANDS } from "@/lib/constants"
+import { getSupabasePublicClient } from "@/lib/server/supabase"
+import type { Brand } from "@/lib/types"
 
-export default function BrandsPage() {
+async function getBrands(): Promise<Brand[]> {
+  try {
+    const supabase = getSupabasePublicClient()
+    const { data, error } = await supabase
+      .from('brands')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching brands:', error)
+      return []
+    }
+
+    // Map database fields to match our Brand type
+    return (data || []).map(brand => ({
+      id: brand.id,
+      name: brand.name,
+      logo: brand.logo || '',
+      description: brand.description || '',
+      productCount: brand.product_count || 0,
+      featured: brand.featured ?? false
+    }))
+  } catch (error) {
+    console.error('Error fetching brands:', error)
+    return []
+  }
+}
+
+export default async function BrandsPage() {
+  const brands = await getBrands()
+
   return (
     <>
       <PageContainer>
@@ -17,7 +48,7 @@ export default function BrandsPage() {
 
       {/* Brand Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {BRANDS.map((brand) => (
+        {brands.map((brand) => (
           <div
             key={brand.id}
             className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition group"
@@ -69,12 +100,12 @@ export default function BrandsPage() {
       <div className="mt-16 bg-linear-to-r from-primary/10 to-accent/10 rounded-2xl p-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           <div>
-            <div className="text-4xl font-bold text-primary mb-2">{BRANDS.length}+</div>
+            <div className="text-4xl font-bold text-primary mb-2">{brands.length}+</div>
             <div className="text-muted-foreground">Trusted Brands</div>
           </div>
           <div>
             <div className="text-4xl font-bold text-primary mb-2">
-              {BRANDS.reduce((sum, b) => sum + b.productCount, 0)}+
+              {brands.reduce((sum, b) => sum + b.productCount, 0)}+
             </div>
             <div className="text-muted-foreground">Products Available</div>
           </div>

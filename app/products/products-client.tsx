@@ -8,10 +8,14 @@ import { SectionHeading } from "@/components/ui/section-heading"
 import { ProductCard } from "@/components/ui/product-card"
 import { Button } from "@/components/ui/button"
 import Footer from "@/components/footer"
-import { CATEGORIES, PRODUCTS } from "@/lib/constants"
-import type { Category } from "@/lib/constants"
+import type { Product, Category } from "@/lib/types"
+import { CATEGORIES } from "@/lib/types"
 
-export default function ProductsClient() {
+interface ProductsClientProps {
+  initialProducts: Product[]
+}
+
+export default function ProductsClient({ initialProducts }: ProductsClientProps) {
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
   const brandParam = searchParams.get("brand")
@@ -34,7 +38,7 @@ export default function ProductsClient() {
   }, [categoryParam, brandParam])
 
   const filteredProducts = useMemo(() => {
-    let filtered = PRODUCTS.filter((product) => {
+    let filtered = initialProducts.filter((product) => {
       const matchesSearch =
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -58,9 +62,12 @@ export default function ProductsClient() {
     }
 
     return filtered
-  }, [searchQuery, selectedCategory, selectedBrand, priceRange, sortBy])
+  }, [initialProducts, searchQuery, selectedCategory, selectedBrand, priceRange, sortBy])
 
-  const uniqueBrands = ["All", ...Array.from(new Set(PRODUCTS.map((p) => p.brand)))]
+  const uniqueBrands = useMemo(
+    () => ["All", ...Array.from(new Set(initialProducts.map((p) => p.brand)))],
+    [initialProducts]
+  )
 
   return (
     <>

@@ -3,14 +3,14 @@
 -- Goal: strong defaults. Deny direct DB access to anon/authenticated; all app reads/writes go through Next.js server routes using SUPABASE_SERVICE_ROLE_KEY.
 
 -- 1) Enable RLS
-alter table if exists public.users enable row level security;
+
 alter table if exists public.products enable row level security;
 alter table if exists public.orders enable row level security;
 alter table if exists public.carts enable row level security;
 alter table if exists public.notification_events enable row level security;
 
 -- 2) Remove direct privileges for anon/authenticated (defense in depth)
-revoke all on table public.users from anon, authenticated;
+
 revoke all on table public.products from anon, authenticated;
 revoke all on table public.orders from anon, authenticated;
 revoke all on table public.carts from anon, authenticated;

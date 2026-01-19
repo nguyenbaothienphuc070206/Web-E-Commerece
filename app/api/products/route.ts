@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { PRODUCTS } from "@/lib/constants"
 import { getSessionUserFromCookies } from "@/lib/server/auth"
 import { getRequestIp, rateLimit } from "@/lib/server/rate-limit"
 import {
@@ -8,22 +7,6 @@ import {
   hasSupabasePublicConfig,
   hasSupabaseServiceConfig,
 } from "@/lib/server/supabase"
-
-const products = PRODUCTS.map((p) => ({
-  id: p.id,
-  name: p.name,
-  category: p.category,
-  price: p.price,
-  originalPrice: p.originalPrice,
-  discount: p.discount,
-  specs: p.specs,
-  image: p.image,
-  stock: p.inStock ? 10 : 0,
-  rating: p.rating,
-  reviews: p.reviews,
-  description: p.description,
-  brand: p.brand,
-}))
 
 function mapDbProduct(row: any) {
   const stock = typeof row?.stock === "number" ? row.stock : 0
@@ -52,33 +35,34 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const category = searchParams.get("category")
 
-  // Prefer DB-backed products when Supabase is configured.
-  // Recommended: use the admin client in server routes so the DB can stay locked down via RLS.
-  if (hasSupabaseServiceConfig || hasSupabasePublicConfig) {
-    const supabase = hasSupabaseServiceConfig ? getSupabaseAdminClient() : getSupabasePublicClient()
-    let query = supabase
-      .from("products")
-      .select(
-        "id,name,category,price,original_price,discount,specs,image,stock,rating,reviews,description,brand,in_stock",
-      )
-      .order("id", { ascending: true })
-      .limit(500)
-
-    if (category) query = query.eq("category", category)
-
-    const { data, error } = await query
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-    }
-
-    const mapped = (data || []).map(mapDbProduct)
-    return NextResponse.json({ success: true, data: mapped, total: mapped.length })
+  // Check if Supabase is configured
+  if (!hasSupabaseServiceConfig && !hasSupabasePublicConfig) {
+    return NextResponse.json(
+      { success: false, error: "Database not configured. Please set up Supabase credentials." },
+      { status: 500 }
+    )
   }
 
-  let filteredProducts = products
-  if (category) filteredProducts = products.filter((p) => p.category === category)
+  // Use admin client if available for better performance and security
+  const supabase = hasSupabaseServiceConfig ? getSupabaseAdminClient() : getSupabasePublicClient()
+  
+  let query = supabase
+    .from("products")
+    .select(
+      "id,name,category,price,original_price,discount,specs,image,stock,rating,reviews,description,brand,in_stock",
+    )
+    .order("id", { ascending: true })
+    .limit(500)
 
-  return NextResponse.json({ success: true, data: filteredProducts, total: filteredProducts.length })
+  if (category) query = query.eq("category", category)
+
+  const { data, error } = await query
+  if (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+
+  const mapped = (data || []).map(mapDbProduct)
+  return NextResponse.json({ success: true, data: mapped, total: mapped.length })
 }
 
 export async function POST(request: Request) {
@@ -116,42 +100,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 })
     }
 
-    // Save to DB when configured, otherwise keep demo behavior.
-    if (hasSupabaseServiceConfig) {
-      const supabase = getSupabaseAdminClient()
-      const insertRow: any = {
-        name: body.name,
-        description: body.description ?? null,
-        specs: body.specs ?? null,
-        price: body.price,
-        original_price: body.originalPrice ?? null,
-        discount: body.discount ?? null,
-        image: body.image ?? null,
-        category: body.category,
-        brand: body.brand ?? null,
-        stock: typeof body.stock === "number" ? Math.max(0, Math.floor(body.stock)) : 0,
-        in_stock: typeof body.inStock === "boolean" ? body.inStock : true,
-        rating: body.rating ?? null,
-        reviews: body.reviews ?? null,
-      }
-
-      if (insertRow.stock > 0) insertRow.in_stock = true
-      if (insertRow.stock === 0 && typeof body.inStock !== "boolean") insertRow.in_stock = false
-
-      const { data, error } = await supabase
-        .from("products")
-        .insert([insertRow])
-        .select(
-          "id,name,category,price,original_price,discount,specs,image,stock,rating,reviews,description,brand,in_stock",
-        )
-        .single()
-
-      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-      return NextResponse.json({ success: true, data: mapDbProduct(data) }, { status: 201 })
+    // Check if Supabase is configured
+    if (!hasSupabaseServiceConfig) {
+      return NextResponse.json(
+        { success: false, error: "Database admin access not configured. Please set SUPABASE_SERVICE_ROLE_KEY." },
+        { status: 500 }
+      )
     }
 
-    const newProduct = { id: products.length + 1, ...body, createdAt: new Date() }
-    return NextResponse.json({ success: true, data: newProduct }, { status: 201 })
+    const supabase = getSupabaseAdminClient()
+    const insertRow: any = {
+      name: body.name,
+      description: body.description ?? null,
+      specs: body.specs ?? null,
+      price: body.price,
+      original_price: body.originalPrice ?? null,
+      discount: body.discount ?? null,
+      image: body.image ?? null,
+      category: body.category,
+      brand: body.brand ?? null,
+      stock: typeof body.stock === "number" ? Math.max(0, Math.floor(body.stock)) : 0,
+      in_stock: typeof body.inStock === "boolean" ? body.inStock : true,
+      rating: body.rating ?? null,
+      reviews: body.reviews ?? null,
+    }
+
+    if (insertRow.stock > 0) insertRow.in_stock = true
+    if (insertRow.stock === 0 && typeof body.inStock !== "boolean") insertRow.in_stock = false
+
+    const { data, error } = await supabase
+      .from("products")
+      .insert([insertRow])
+      .select(
+        "id,name,category,price,original_price,discount,specs,image,stock,rating,reviews,description,brand,in_stock",
+      )
+      .single()
+
+    if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, data: mapDbProduct(data) }, { status: 201 })
   } catch (error) {
     return NextResponse.json({ success: false, error: "Failed to create product" }, { status: 500 })
   }

@@ -3,13 +3,13 @@ import { cookies } from "next/headers";
 import { getServerEnv, requireAuthSecret } from "@/lib/server/env";
 
 export type SessionUser = {
-  id: number;
+  id: string;
   email: string;
   name?: string;
   role: "user" | "admin";
 };
 
-const COOKIE_NAME = "wec_session";
+const COOKIE_NAME = "session_token";
 
 function getAuthSecretOrNull() {
   try {
@@ -41,7 +41,7 @@ function sign(data: string, secret: string) {
 }
 
 type TokenPayload = {
-  sub: number;
+  sub: string;
   email: string;
   name?: string;
   role: "user" | "admin";

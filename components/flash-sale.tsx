@@ -4,9 +4,13 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/ui/product-card"
-import { PRODUCTS } from "@/lib/constants"
+import type { Product } from "@/lib/types"
 
-export default function FlashSale() {
+interface FlashSaleProps {
+  products: Product[]
+}
+
+export default function FlashSale({ products }: FlashSaleProps) {
   const [timeLeft, setTimeLeft] = useState({ hours: 12, minutes: 34, seconds: 56 })
 
   useEffect(() => {
@@ -33,7 +37,7 @@ export default function FlashSale() {
   }, [])
 
   // Get products with highest discount for flash sale
-  const flashSaleProducts = PRODUCTS
+  const flashSaleProducts = products
     .filter(p => p.discount && p.discount >= 14)
     .slice(0, 3)
 

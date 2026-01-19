@@ -18,7 +18,9 @@ export async function POST(request: Request) {
     await ensureSeedAdmin();
     const body = await request.json()
     const { email, password, name } = body || {}
-    if (!email || !password) return NextResponse.json({ success: false, error: "Missing" }, { status: 400 })
+    if (!email || !password) {
+      return NextResponse.json({ success: false, error: "Missing email or password" }, { status: 400 })
+    }
 
     const normalizedEmail = String(email).toLowerCase().trim();
     if (normalizedEmail.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
@@ -26,7 +28,6 @@ export async function POST(request: Request) {
     }
 
     const pass = String(password);
-    // bcrypt only uses first 72 bytes; enforce sane limits.
     if (pass.length < 8 || pass.length > 72) {
       return NextResponse.json({ success: false, error: "Password must be 8-72 characters" }, { status: 400 })
     }
@@ -45,13 +46,35 @@ export async function POST(request: Request) {
       );
     }
 
-    if (await findUserByEmail(normalizedEmail))
-      return NextResponse.json({ success: false, error: "Exists" }, { status: 409 })
+    const existingUser = await findUserByEmail(normalizedEmail);
+    if (existingUser) {
+      return NextResponse.json({ success: false, error: "User already exists" }, { status: 409 })
+    }
 
     const passwordHash = await bcrypt.hash(pass, 12);
-    const user = await createUser({ email: normalizedEmail, passwordHash, name: displayName || undefined, role: "user" })
+    
+    let user;
+    try {
+      user = await createUser({ 
+        email: normalizedEmail, 
+        passwordHash, 
+        name: displayName || undefined, 
+        role: "user" 
+      });
+    } catch (createError) {
+      console.error('createUser error:', createError);
+      return NextResponse.json({ 
+        success: false, 
+        error: "Failed to create user",
+        details: createError instanceof Error ? createError.message : String(createError)
+      }, { status: 500 });
+    }
 
-    const token = createSessionToken({ id: user.id, email: user.email, name: user.name, role: user.role }, 60 * 60 * 24 * 7);
+    const token = createSessionToken(
+      { id: user.id, email: user.email, name: user.name, role: user.role }, 
+      60 * 60 * 24 * 7
+    );
+    
     const res = NextResponse.json({ success: true, data: toPublicUser(user) });
     res.cookies.set(getSessionCookieName(), token, {
       httpOnly: true,
@@ -60,8 +83,14 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
+    
     return res;
-  } catch {
-    return NextResponse.json({ success: false, error: "Error" }, { status: 500 })
+  } catch (error) {
+    console.error('Register route error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 }

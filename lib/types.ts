@@ -43,3 +43,16 @@ export interface ContactForm {
   subject: string
   message: string
 }
+
+// Categories
+export const CATEGORIES = [
+  "All",
+  "Phone",
+  "Laptop",
+  "AirPod",
+  "Watch",
+  "Camera",
+  "Gaming"
+] as const
+
+export type Category = typeof CATEGORIES[number]

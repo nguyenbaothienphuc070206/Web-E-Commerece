@@ -3,18 +3,24 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
-import NavbarDemo from "@/components/resizable-navbar-demo"
+import NavbarWrapper from "@/components/navbar-wrapper"; 
 import { CartProvider } from "@/components/cart/cart-context"
 import { WishlistProvider } from "@/components/wishlist/wishlist-context"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  icons: {
-    icon: "/favicon.ico",
-  },
-}
+  title: "E-Commerce Store",
+  description: "Modern e-commerce platform",
+};
 
 
 export default function RootLayout({
@@ -27,7 +33,7 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <WishlistProvider>
           <CartProvider>
-            <NavbarDemo />
+            <NavbarWrapper/>
             {children}
             <Analytics />
           </CartProvider>
