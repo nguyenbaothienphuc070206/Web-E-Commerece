@@ -35,11 +35,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=oauth_failed`)
   }
 
-  // Verify state (CSRF protection)
+  // Verify state (CSRF protection) and extract role
   const storedState = request.cookies.get('oauth_state')?.value
-  if (!state || state !== storedState) {
-    console.error('State mismatch')
-    return NextResponse.redirect(`${origin}/login?error=state_mismatch`)
+  let requestedRole = 'customer'
+  
+  try {
+    const stateData = JSON.parse(state || '{}')
+    const storedStateData = JSON.parse(storedState || '{}')
+    
+    if (stateData.random !== storedStateData.random) {
+      console.error('State mismatch')
+      return NextResponse.redirect(`${origin}/login?error=state_mismatch`)
+    }
+    
+    requestedRole = stateData.role || 'customer'
+  } catch (e) {
+    // Fallback for old state format (simple string)
+    if (!state || state !== storedState) {
+      console.error('State mismatch')
+      return NextResponse.redirect(`${origin}/login?error=state_mismatch`)
+    }
   }
 
   if (!code) {
@@ -159,8 +174,14 @@ export async function GET(request: NextRequest) {
       // Create session token using our custom auth system
       const sessionToken = createSessionToken(toPublicUser(user), 7 * 24 * 60 * 60) // 7 days
 
+      // Verify admin role if requested
+      if (requestedRole === 'admin' && user.role !== 'admin') {
+        return NextResponse.redirect(`${origin}/admin/login?error=not_admin`)
+      }
+
       // Set session cookie
-      const response = NextResponse.redirect(`${origin}/account`)
+      const redirectUrl = requestedRole === 'admin' ? `${origin}/admin` : `${origin}/account`
+      const response = NextResponse.redirect(redirectUrl)
       response.cookies.set('session_token', sessionToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
