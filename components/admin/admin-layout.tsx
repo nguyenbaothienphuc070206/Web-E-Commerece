@@ -5,6 +5,7 @@ import {
   LayoutDashboard, 
   Package, 
   ShoppingCart, 
+  Truck,
   Users, 
   Settings, 
   LogOut,
@@ -15,8 +16,8 @@ import { Button } from "@/components/ui/button"
 
 interface AdminLayoutProps {
   children: React.ReactNode
-  activeTab: "dashboard" | "products" | "orders" | "customers" | "settings"
-  onTabChange: (tab: "dashboard" | "products" | "orders" | "customers" | "settings") => void
+  activeTab: "dashboard" | "products" | "orders" | "shipments" | "customers" | "settings"
+  onTabChange: (tab: "dashboard" | "products" | "orders" | "shipments" | "customers" | "settings") => void
 }
 
 export default function AdminLayout({ children, activeTab, onTabChange }: AdminLayoutProps) {
@@ -26,6 +27,7 @@ export default function AdminLayout({ children, activeTab, onTabChange }: AdminL
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "products", label: "Products", icon: Package },
     { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "shipments", label: "Shipments", icon: Truck },
     { id: "customers", label: "Customers", icon: Users },
     { id: "settings", label: "Settings", icon: Settings },
   ] as const
