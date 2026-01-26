@@ -8,13 +8,14 @@ import AdminLayout from "./admin-layout"
 import DashboardOverview from "./dashboard-overview"
 import ProductManagement from "./product-management"
 import OrderManagement from "@/components/orders/order-management"
+import ShipmentTracking from "./shipment-tracking"
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [seedLoading, setSeedLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "orders" | "customers" | "settings">("dashboard")
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "orders" | "shipments" | "customers" | "settings">("dashboard")
 
   const [createState, createAction, createPending] = useActionState(createProductAction, null)
 
@@ -140,6 +141,10 @@ export default function AdminDashboard() {
           </div>
           <OrderManagement />
         </div>
+      )}
+
+      {!loading && activeTab === "shipments" && (
+        <ShipmentTracking/>
       )}
 
       {!loading && activeTab === "customers" && (
