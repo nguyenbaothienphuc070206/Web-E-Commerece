@@ -94,7 +94,7 @@ export default function AdminDashboard() {
       )}
 
       {!loading && activeTab === "dashboard" && (
-        <div className="space-y-6">
+        <div className="space-y-6 mt-16">
           <DashboardOverview
             stats={stats}
             recentOrders={orders.slice().reverse().slice(0, 5)}
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       )}
 
       {!loading && activeTab === "orders" && (
-        <div className="space-y-6">
+        <div className="space-y-6 mt-16" >
           <div>
             <h2 className="text-3xl font-bold text-foreground">Orders</h2>
             <p className="text-muted-foreground">Manage customer orders and track shipments</p>

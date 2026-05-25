@@ -150,7 +150,7 @@ export default function ShipmentTracking() {
     const paginatedShipments = filteredShipments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
     return (
-        <div className="space-y-6 font-sans antialiased text-slate-900 p-4 max-w-[1600px] mx-auto">
+        <div className="space-y-6 font-sans antialiased text-slate-900 p-4 max-w-[1600px] mt-16">
             {/* Header Section */}
             <div className="flex items-center justify-between">
                 <div>
