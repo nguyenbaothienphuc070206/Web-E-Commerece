@@ -11,6 +11,7 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { Search, User, ShoppingCart, Heart } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/cart-context";
 import { useWishlist } from "@/components/wishlist/wishlist-context";
 import { AnimatePresence, motion } from "framer-motion";
@@ -23,6 +24,7 @@ type NavbarDemoProps = {
 };
 
 export default function NavbarDemo({ user }: NavbarDemoProps) {
+  const router = useRouter();
   const { items } = useCart();
   const { items: w } = useWishlist();
   const navItems = [
@@ -34,7 +36,22 @@ export default function NavbarDemo({ user }: NavbarDemoProps) {
   ];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSearchInput, setShowSearchInput] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const runProductSearch = (rawQuery: string) => {
+    const q = rawQuery.trim();
+
+    setShowSearchInput(false);
+    setIsMobileMenuOpen(false);
+
+    if (!q) {
+      router.push("/products");
+      return;
+    }
+
+    router.push(`/products?search=${encodeURIComponent(q)}`);
+  };
 
   useEffect(() => {
     if (showSearchInput && inputRef.current) {
@@ -104,8 +121,14 @@ export default function NavbarDemo({ user }: NavbarDemoProps) {
                     ref={inputRef}
                     type="text"
                     placeholder="Search for products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        runProductSearch(searchQuery)
+                      }
+                    }}
                     className="bg-transparent outline-none text-foreground placeholder:text-muted-foreground flex-1"
-                    onBlur={() => (false)}
                     autoFocus
                   />
                 </div>
@@ -139,6 +162,13 @@ export default function NavbarDemo({ user }: NavbarDemoProps) {
             <input
               type="text"
               placeholder="Search for products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  runProductSearch(searchQuery)
+                }
+              }}
               className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground"
             />
             <div className="flex w-full flex-col gap-4 mt-2">

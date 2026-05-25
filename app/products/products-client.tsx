@@ -19,8 +19,9 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get("category")
   const brandParam = searchParams.get("brand")
+  const searchParam = searchParams.get("search")
 
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(searchParam ?? "")
   const [selectedCategory, setSelectedCategory] = useState<Category>("All")
   const [selectedBrand, setSelectedBrand] = useState<string>("All")
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000000])
@@ -35,13 +36,26 @@ export default function ProductsClient({ initialProducts }: ProductsClientProps)
     if (brandParam) {
       setSelectedBrand(brandParam)
     }
-  }, [categoryParam, brandParam])
+    setSearchQuery(searchParam ?? "")
+  }, [categoryParam, brandParam, searchParam])
 
   const filteredProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+
     let filtered = initialProducts.filter((product) => {
+      const searchableText = [
+        product.name,
+        product.description,
+        product.specs,
+        product.brand,
+        product.category,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+
       const matchesSearch =
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+        query.length === 0 || searchableText.includes(query)
       const matchesCategory = selectedCategory === "All" || product.category === selectedCategory
       const matchesBrand = selectedBrand === "All" || product.brand === selectedBrand
       const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1]
