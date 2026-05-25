@@ -41,19 +41,37 @@ create table if not exists public.user_sessions (
   created_at timestamp with time zone default now()
 );
 
+create table if not exists public.user_credentials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.users(id) on delete cascade not null unique,
+  password_hash text not null,
+  password_salt text,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
 -- Indexes for better performance
 create index if not exists idx_users_email on public.users(email);
 create index if not exists idx_oauth_providers_user_id on public.oauth_providers(user_id);
 create index if not exists idx_oauth_providers_provider on public.oauth_providers(provider, provider_user_id);
 create index if not exists idx_user_sessions_token on public.user_sessions(session_token);
 create index if not exists idx_user_sessions_user_id on public.user_sessions(user_id);
+create index if not exists idx_user_credentials_user_id on public.user_credentials(user_id);
 
 -- Enable Row Level Security
 alter table public.users enable row level security;
 alter table public.oauth_providers enable row level security;
 alter table public.user_sessions enable row level security;
+alter table public.user_credentials enable row level security;
 
 -- RLS Policies for users table
+CREATE POLICY "Service role can manage user_credentials"
+  ON public.user_credentials
+  FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true)
+
 create policy "Users can view own profile"
   on public.users for select
   using (auth.uid() = id);
@@ -90,6 +108,11 @@ create trigger update_users_updated_at
 drop trigger if exists update_oauth_providers_updated_at on public.oauth_providers;
 create trigger update_oauth_providers_updated_at 
   before update on public.oauth_providers
+  for each row execute function update_updated_at_column();
+
+drop trigger if exists update_user_credentials_updated_at on public.user_credentials;
+create trigger update_user_credentials_updated_at 
+  before update on public.user_credentials
   for each row execute function update_updated_at_column();
 
 -- Allow service role to INSERT users

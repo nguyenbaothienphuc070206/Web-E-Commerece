@@ -17,6 +17,9 @@ export async function POST(request: Request) {
 
     await ensureSeedAdmin();
     const body = await request.json()
+
+    console.log("Frontend Body Response:", body);
+
     const { email, password, name } = body || {}
     if (!email || !password) {
       return NextResponse.json({ success: false, error: "Missing email or password" }, { status: 400 })

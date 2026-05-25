@@ -29,10 +29,10 @@ function mapDbUser(row: DbUserRow, passwordHash: string): User {
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
-    const normalized = String(email).toLowerCase().trim();
+    const EmailNormalized = String(email).toLowerCase().trim();
 
     if (!hasSupabaseServiceConfig) {
-        return users.find((u) => u.email.toLowerCase() === normalized) || null;
+        return users.find((u) => u.email.toLowerCase() === EmailNormalized) || null;
     }
 
     const supabase = getSupabaseAdminClient();
@@ -41,7 +41,7 @@ export async function findUserByEmail(email: string): Promise<User | null> {
     const { data: userData, error: userError } = await supabase
         .from("users")
         .select("id,email,full_name,role")
-        .eq("email", normalized)
+        .eq("email", EmailNormalized)
         .maybeSingle();
 
     if (userError) throw new Error(userError.message);
@@ -69,12 +69,12 @@ export async function createUser(input: {
     name?: string;
     role: "user" | "admin";
 }): Promise<User> {
-    const normalized = String(input.email).toLowerCase().trim();
+    const EmailNormalized = String(input.email).toLowerCase().trim();
 
     if (!hasSupabaseServiceConfig) {
         const user: User = {
             id: String(users.length + 1),
-            email: normalized,
+            email: EmailNormalized,
             passwordHash: input.passwordHash,
             name: input.name,
             role: input.role,
@@ -89,7 +89,7 @@ export async function createUser(input: {
         .from("users")
         .insert([
             {
-                email: normalized,
+                email: EmailNormalized,
                 full_name: input.name ?? null,
                 role: input.role,
                 email_verified: true, 
@@ -109,6 +109,7 @@ export async function createUser(input: {
             .insert([
                 {
                     user_id: userData.id,
+                    email: EmailNormalized,
                     password_hash: input.passwordHash,
                     password_salt: "",
                 },
